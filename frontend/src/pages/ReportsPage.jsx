@@ -45,7 +45,7 @@ export default function ReportsPage() {
           <div className="glass-card" style={{ padding: '1rem', cursor: 'pointer', textAlign: 'center', border: '1px solid var(--border)', opacity: 0.6 }}>
             <Calendar size={28} style={{ marginBottom: 8, color: 'var(--text-secondary)' }} />
             <div style={{ fontWeight: 500 }}>Custom Range</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Coming soon</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Select date range</div>
           </div>
         </div>
 

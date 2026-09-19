@@ -33,7 +33,19 @@ def enrich_hotspot_with_facility(db: Session, hotspot: Hotspot):
     nearest = find_nearest_facility(db, hotspot.latitude, hotspot.longitude)
     if nearest:
         hotspot.nearest_facility_id = nearest.id
-        hotspot.dist_to_industry_m = 0.0  # Placeholder — real impl uses ST_Distance
+        from app.utils.geo_utils import haversine_distance_km
+        from sqlalchemy import func
+        # Extract facility coordinates and compute distance
+        fac_point = db.execute(
+            func.ST_Y(nearest.geom), func.ST_X(nearest.geom)
+        ).first()
+        if fac_point:
+            hotspot.dist_to_industry_m = haversine_distance_km(
+                hotspot.latitude, hotspot.longitude,
+                fac_point[0], fac_point[1]
+            ) * 1000.0  # Convert km → meters
+        else:
+            hotspot.dist_to_industry_m = 0.0
     else:
         hotspot.dist_to_industry_m = 99999.0
     return hotspot

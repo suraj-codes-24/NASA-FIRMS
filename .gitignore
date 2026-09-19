@@ -97,3 +97,11 @@ htmlcov/
 .coverage
 .coverage.*
 coverage.xml
+
+# ----- Dev Artifacts (internal planning docs) -----
+implementation_plan.md
+task.md
+PRE_PROJECT_DOCUMENT.html
+
+# ----- Pytest Cache -----
+.pytest_cache/
