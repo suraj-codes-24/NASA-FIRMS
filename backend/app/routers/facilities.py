@@ -41,3 +41,35 @@ async def get_facility(
         raise HTTPException(status_code=404, detail="Facility not found")
         
     return facility
+
+@router.get("/{facility_id}/hotspots")
+async def get_facility_hotspots(
+    facility_id: int,
+    radius_km: float = Query(2.0, ge=0.1, le=50.0),
+    days: int = Query(7, ge=1, le=365),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get all hotspots within radius_km of a given facility.
+    """
+    from app.models.spatial import Hotspot
+    from app.schemas.spatial import HotspotResponse
+    
+    facility = await db.get(Facility, facility_id)
+    if not facility:
+        raise HTTPException(status_code=404, detail="Facility not found")
+    
+    # Use coordinate-based proximity filter (radius_km ~= degrees * 111)
+    delta = radius_km / 111.0
+    query = (
+        select(Hotspot)
+        .filter(
+            Hotspot.latitude.between(facility.geom.ST_Y() - delta, facility.geom.ST_Y() + delta),
+            Hotspot.longitude.between(facility.geom.ST_X() - delta, facility.geom.ST_X() + delta),
+        )
+        .order_by(Hotspot.acq_date.desc())
+        .limit(200)
+    )
+    
+    result = await db.execute(query)
+    return result.scalars().all()

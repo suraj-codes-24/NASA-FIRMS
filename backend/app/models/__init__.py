@@ -1,1 +1,1 @@
-from app.models.spatial import Facility, Hotspot, ClassificationLog, Alert, MLClassificationEnum
+from app.models.spatial import Facility, Hotspot, ClassificationLog, Alert, VerificationLog, UserAccount, MLClassificationEnum

@@ -89,3 +89,17 @@ def snap_to_grid(lat: float, lon: float, grid_size: float = 0.01) -> Tuple[float
     snapped_lat = round(lat / grid_size) * grid_size
     snapped_lon = round(lon / grid_size) * grid_size
     return (round(snapped_lat, 6), round(snapped_lon, 6))
+
+
+# Convenience aliases
+def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """Alias for haversine_distance_km."""
+    return haversine_distance_km(lat1, lon1, lat2, lon2)
+
+
+def point_in_bbox(
+    lat: float, lon: float,
+    min_lon: float, min_lat: float, max_lon: float, max_lat: float
+) -> bool:
+    """Check if a point falls within a bounding box."""
+    return min_lat <= lat <= max_lat and min_lon <= lon <= max_lon

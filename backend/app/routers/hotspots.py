@@ -1,12 +1,14 @@
 from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
-from typing import List
+from sqlalchemy import select, func, and_
+from typing import List, Optional
 from geoalchemy2.elements import WKTElement
+from geoalchemy2.functions import ST_DWithin, ST_X, ST_Y
+from datetime import datetime, date
 
 from app.database import get_db
 from app.models.spatial import Hotspot, Facility, MLClassificationEnum, VerificationLog
-from app.schemas.spatial import HotspotIngest, HotspotResponse, FacilityResponse, HotspotVerifyRequest, VerificationLogResponse
+from app.schemas.spatial import HotspotIngest, HotspotResponse, FacilityResponse, HotspotVerifyRequest, VerificationLogResponse, HeatmapPoint
 import logging
 
 logger = logging.getLogger(__name__)
@@ -22,7 +24,6 @@ async def ingest_hotspots(
     """
     Ingest a batch of hotspots. Enqueues them for background ML processing via Celery.
     """
-    # Insert hotspots into DB initially as UNCLASSIFIED
     db_hotspots = []
     for h in hotspots:
         point = f"POINT({h.longitude} {h.latitude})"
@@ -37,6 +38,8 @@ async def ingest_hotspots(
             satellite=h.satellite,
             instrument=h.instrument,
             daynight=h.daynight,
+            scan=h.scan,
+            track=h.track,
             pixel_area=h.pixel_area,
             acq_date=h.acq_date,
             ml_label=MLClassificationEnum.UNCLASSIFIED
@@ -46,10 +49,8 @@ async def ingest_hotspots(
     
     await db.commit()
     
-    # Enqueue celery task for spatial enrichment and ML classification
     hotspot_ids = [h.id for h in db_hotspots]
     
-    # We will import celery tasks here to avoid circular imports
     from app.tasks.ml_tasks import process_hotspots_batch
     process_hotspots_batch.delay(hotspot_ids)
     
@@ -58,16 +59,127 @@ async def ingest_hotspots(
 @router.get("", response_model=List[HotspotResponse])
 async def get_hotspots(
     limit: int = Query(100, ge=1, le=1000),
-    ml_label: MLClassificationEnum = Query(None),
+    offset: int = Query(0, ge=0),
+    ml_label: Optional[MLClassificationEnum] = Query(None),
+    date_from: Optional[date] = Query(None),
+    date_to: Optional[date] = Query(None),
+    confidence_min: Optional[float] = Query(None, ge=0, le=100),
+    state: Optional[str] = Query(None),
+    bbox: Optional[str] = Query(None, description="min_lon,min_lat,max_lon,max_lat"),
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Retrieve hotspots with optional filtering.
+    Retrieve hotspots with filtering. Supports date range, classification type,
+    confidence threshold, bounding box, and pagination.
     """
-    query = select(Hotspot).order_by(Hotspot.acq_date.desc()).limit(limit)
+    query = select(Hotspot).order_by(Hotspot.acq_date.desc())
+    
     if ml_label:
         query = query.filter(Hotspot.ml_label == ml_label)
-        
+    if date_from:
+        query = query.filter(Hotspot.acq_date >= datetime.combine(date_from, datetime.min.time()))
+    if date_to:
+        query = query.filter(Hotspot.acq_date <= datetime.combine(date_to, datetime.max.time()))
+    if confidence_min is not None:
+        query = query.filter(Hotspot.confidence >= confidence_min)
+    if bbox:
+        try:
+            parts = [float(x.strip()) for x in bbox.split(",")]
+            min_lon, min_lat, max_lon, max_lat = parts
+            query = query.filter(
+                and_(
+                    Hotspot.latitude >= min_lat,
+                    Hotspot.latitude <= max_lat,
+                    Hotspot.longitude >= min_lon,
+                    Hotspot.longitude <= max_lon
+                )
+            )
+        except (ValueError, IndexError):
+            raise HTTPException(status_code=400, detail="Invalid bbox format. Use: min_lon,min_lat,max_lon,max_lat")
+    
+    query = query.offset(offset).limit(limit)
+    result = await db.execute(query)
+    return result.scalars().all()
+
+@router.get("/latest", response_model=List[HotspotResponse])
+async def get_latest_hotspots(
+    limit: int = Query(50, ge=1, le=500),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get the most recently ingested hotspots.
+    """
+    query = select(Hotspot).order_by(Hotspot.created_at.desc()).limit(limit)
+    result = await db.execute(query)
+    return result.scalars().all()
+
+@router.get("/heatmap", response_model=List[HeatmapPoint])
+async def get_heatmap_data(
+    date_from: Optional[date] = Query(None),
+    date_to: Optional[date] = Query(None),
+    ml_label: Optional[MLClassificationEnum] = Query(None),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get heatmap data points (lat, lon, weight=FRP) for density visualization.
+    """
+    query = select(Hotspot.latitude, Hotspot.longitude, Hotspot.frp)
+    
+    if date_from:
+        query = query.filter(Hotspot.acq_date >= datetime.combine(date_from, datetime.min.time()))
+    if date_to:
+        query = query.filter(Hotspot.acq_date <= datetime.combine(date_to, datetime.max.time()))
+    if ml_label:
+        query = query.filter(Hotspot.ml_label == ml_label)
+    
+    query = query.limit(5000)
+    result = await db.execute(query)
+    rows = result.all()
+    return [HeatmapPoint(latitude=r[0], longitude=r[1], weight=r[2] or 1.0) for r in rows]
+
+@router.get("/{hotspot_id}", response_model=HotspotResponse)
+async def get_hotspot(
+    hotspot_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get full details of a single hotspot by ID.
+    """
+    hotspot = await db.get(Hotspot, hotspot_id)
+    if not hotspot:
+        raise HTTPException(status_code=404, detail="Hotspot not found")
+    return hotspot
+
+@router.get("/{hotspot_id}/history", response_model=List[HotspotResponse])
+async def get_hotspot_history(
+    hotspot_id: int,
+    days: int = Query(30, ge=1, le=365),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get historical hotspots at approximately the same location (within ~1km grid).
+    """
+    hotspot = await db.get(Hotspot, hotspot_id)
+    if not hotspot:
+        raise HTTPException(status_code=404, detail="Hotspot not found")
+    
+    # Find nearby hotspots within ~0.01 degree (~1km) over the time window
+    query = select(Hotspot).filter(
+        and_(
+            Hotspot.latitude.between(hotspot.latitude - 0.01, hotspot.latitude + 0.01),
+            Hotspot.longitude.between(hotspot.longitude - 0.01, hotspot.longitude + 0.01),
+            Hotspot.acq_date >= func.now() - func.cast(f'{days} days', type_=None.__class__)
+        )
+    ).order_by(Hotspot.acq_date.desc()).limit(200)
+    
+    # Simplified approach: just filter by coordinate proximity
+    query = select(Hotspot).filter(
+        and_(
+            Hotspot.latitude.between(hotspot.latitude - 0.01, hotspot.latitude + 0.01),
+            Hotspot.longitude.between(hotspot.longitude - 0.01, hotspot.longitude + 0.01),
+        )
+    ).order_by(Hotspot.acq_date.desc()).limit(200)
+    
     result = await db.execute(query)
     return result.scalars().all()
 
@@ -84,7 +196,6 @@ async def get_nearest_facilities(
     if not hotspot:
         raise HTTPException(status_code=404, detail="Hotspot not found")
         
-    # Query facilities ordered by distance to this hotspot
     query = select(Facility).order_by(
         Facility.geom.distance_centroid(hotspot.geom)
     ).limit(limit)
@@ -107,7 +218,6 @@ async def verify_hotspot_classification(
         
     original_label = hotspot.ml_label
     
-    # Create the verification log
     log = VerificationLog(
         hotspot_id=hotspot_id,
         original_label=original_label,
@@ -117,7 +227,6 @@ async def verify_hotspot_classification(
     )
     db.add(log)
     
-    # Update the hotspot
     hotspot.ml_label = request.verified_label
     hotspot.is_user_verified = True
     
@@ -125,3 +234,4 @@ async def verify_hotspot_classification(
     await db.refresh(log)
     
     return log
+

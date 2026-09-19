@@ -32,6 +32,8 @@ class HotspotIngest(BaseModel):
     satellite: str
     instrument: str
     daynight: str
+    scan: Optional[float] = None
+    track: Optional[float] = None
     pixel_area: Optional[float] = None
     acq_date: datetime.datetime
 
@@ -44,13 +46,19 @@ class HotspotResponse(BaseModel):
     frp: float
     confidence: float
     satellite: str
+    instrument: Optional[str] = None
+    daynight: Optional[str] = None
+    scan: Optional[float] = None
+    track: Optional[float] = None
     acq_date: datetime.datetime
     
     # Enriched fields
     land_cover_class: Optional[str] = None
     dist_to_industry_m: Optional[float] = None
-    persistence_hours: float
-    spatial_cluster_size: int
+    persistence_hours: float = 0.0
+    recurrence_count: int = 0
+    spatial_cluster_size: int = 1
+    spread_rate: Optional[float] = None
     
     # ML fields
     ml_label: MLClassificationEnum
@@ -58,6 +66,11 @@ class HotspotResponse(BaseModel):
     is_user_verified: bool
     
     model_config = ConfigDict(from_attributes=True)
+
+class HeatmapPoint(BaseModel):
+    latitude: float
+    longitude: float
+    weight: float = 1.0
 
 class HotspotVerifyRequest(BaseModel):
     verified_label: MLClassificationEnum
@@ -105,3 +118,4 @@ class ClassificationCount(BaseModel):
 class TimelineDataPoint(BaseModel):
     date: str
     count: int
+

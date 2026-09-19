@@ -1,5 +1,5 @@
 import datetime
-from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, Enum as SQLEnum
+from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, Enum as SQLEnum, JSON
 from sqlalchemy.orm import relationship
 from geoalchemy2 import Geometry
 from app.database import Base
@@ -21,8 +21,15 @@ class Facility(Base):
     name = Column(String, nullable=True)
     facility_type = Column(String, index=True)  # e.g., 'refinery', 'power_plant'
     geom = Column(Geometry('POINT', srid=4326), nullable=False)
+    state = Column(String, nullable=True, index=True)
+    district = Column(String, nullable=True)
+    operator = Column(String, nullable=True)
+    source_fuel = Column(String, nullable=True)
+    tags = Column(JSON, nullable=True)  # Raw OSM tags as JSON
     
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.datetime.now(datetime.timezone.utc))
+    last_updated = Column(DateTime(timezone=True), default=lambda: datetime.datetime.now(datetime.timezone.utc),
+                          onupdate=lambda: datetime.datetime.now(datetime.timezone.utc))
 
 class Hotspot(Base):
     __tablename__ = "hotspots"
@@ -40,6 +47,8 @@ class Hotspot(Base):
     satellite = Column(String, index=True)  # 'MODIS', 'VIIRS-SNPP', 'VIIRS-NOAA20'
     instrument = Column(String)
     daynight = Column(String(1)) # 'D' or 'N'
+    scan = Column(Float, nullable=True)
+    track = Column(Float, nullable=True)
     pixel_area = Column(Float, nullable=True)
     
     # Time Data
@@ -50,7 +59,9 @@ class Hotspot(Base):
     nearest_facility_id = Column(Integer, ForeignKey("facilities.id"), nullable=True)
     dist_to_industry_m = Column(Float, nullable=True)
     persistence_hours = Column(Float, default=0.0)
+    recurrence_count = Column(Integer, default=0)
     spatial_cluster_size = Column(Integer, default=1)
+    spread_rate = Column(Float, nullable=True)  # km/hr
     
     # ML Classification
     ml_label = Column(SQLEnum(MLClassificationEnum), default=MLClassificationEnum.UNCLASSIFIED, index=True)
@@ -64,6 +75,8 @@ class Hotspot(Base):
     verification_logs = relationship("VerificationLog", back_populates="hotspot", cascade="all, delete-orphan")
     
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.datetime.now(datetime.timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.datetime.now(datetime.timezone.utc),
+                        onupdate=lambda: datetime.datetime.now(datetime.timezone.utc))
 
 class ClassificationLog(Base):
     __tablename__ = "classification_logs"
@@ -103,4 +116,14 @@ class VerificationLog(Base):
     notes = Column(String, nullable=True)
     
     hotspot = relationship("Hotspot", back_populates="verification_logs")
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.datetime.now(datetime.timezone.utc))
+
+class UserAccount(Base):
+    __tablename__ = "user_accounts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True, nullable=False)
+    password_hash = Column(String, nullable=False)
+    role = Column(String, default="viewer")  # "admin" or "viewer"
+    
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.datetime.now(datetime.timezone.utc))

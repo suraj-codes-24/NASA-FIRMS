@@ -65,3 +65,45 @@ async def get_timeline(db: AsyncSession = Depends(get_db)):
     )
     results = query.all()
     return [TimelineDataPoint(date=str(r[0]), count=r[1]) for r in results]
+
+@router.get("/top-states", response_model=list)
+async def get_top_states(
+    ml_label: MLClassificationEnum = None,
+    limit: int = 10,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get states ranked by hotspot count. Requires facility join for state info.
+    """
+    from app.models.spatial import Facility
+    query = (
+        select(Facility.state, func.count(Hotspot.id).label("count"))
+        .join(Facility, Hotspot.nearest_facility_id == Facility.id)
+        .where(Facility.state.isnot(None))
+        .group_by(Facility.state)
+        .order_by(func.count(Hotspot.id).desc())
+        .limit(limit)
+    )
+    if ml_label:
+        query = query.where(Hotspot.ml_label == ml_label)
+    
+    result = await db.execute(query)
+    return [{"state": r[0], "count": r[1]} for r in result.all()]
+
+@router.get("/persistence", response_model=list)
+async def get_persistent_sources(
+    min_hours: float = 48.0,
+    limit: int = 50,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get persistent thermal sources that have been active longer than min_hours.
+    """
+    query = (
+        select(Hotspot)
+        .where(Hotspot.persistence_hours >= min_hours)
+        .order_by(Hotspot.persistence_hours.desc())
+        .limit(limit)
+    )
+    result = await db.execute(query)
+    return result.scalars().all()
