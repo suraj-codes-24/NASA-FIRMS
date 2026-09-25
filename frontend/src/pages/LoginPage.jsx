@@ -201,6 +201,10 @@ export default function LoginPage() {
           }}>
             <Lock size={16} /> {loading ? 'Processing…' : (isRegister ? 'Request Access' : 'Sign In')}
           </button>
+          
+          <div style={{ textAlign: 'center', marginTop: '1rem', color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem' }}>
+            <strong>Jury Access:</strong> admin@ignis.gov / admin123
+          </div>
         </form>
 
         <p style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '1.5rem' }}>
