@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
-const API_BASE = 'http://localhost:8000/api/v1';
+import { API_BASE } from '../config';
 
 /**
  * Custom hook for fetching and managing hotspot data from the API.

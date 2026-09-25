@@ -1,3 +1,4 @@
+import { API_BASE } from '../config';
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Settings, Bell, Moon, Globe, Shield, Database, Key, CheckCircle2, X } from 'lucide-react';
@@ -260,7 +261,7 @@ const SettingsPage = () => {
                 const originalText = btn.innerHTML;
                 btn.innerHTML = 'Triggering...';
                 try {
-                  await fetch('http://localhost:8000/hotspots/trigger-ingestion', { method: 'POST' });
+                  await fetch(`${API_BASE.replace('/api/v1', '')}/hotspots/trigger-ingestion`, { method: 'POST' });
                   btn.innerHTML = 'Ingestion Triggered!';
                   btn.style.background = '#2ed573';
                   setTimeout(() => {

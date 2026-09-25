@@ -3,7 +3,7 @@ import { Flame, Lock, Eye, EyeOff } from 'lucide-react';
 import { motion } from 'framer-motion';
 import axios from 'axios';
 
-const API_BASE = 'http://localhost:8000/api/v1';
+import { API_BASE } from '../config';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('admin@ignis.gov');

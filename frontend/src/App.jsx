@@ -12,6 +12,7 @@ import ReportsPage from './pages/ReportsPage';
 import SettingsPage from './pages/SettingsPage';
 import LoginPage from './pages/LoginPage';
 import useWebSocket from './hooks/useWebSocket';
+import { WS_BASE } from './config';
 import { SettingsProvider } from './contexts/SettingsContext';
 import './App.css';
 
@@ -40,7 +41,7 @@ function PageWrapper({ children }) {
 
 function AppLayout({ children }) {
   // Connect WebSocket for real-time alerts
-  useWebSocket('ws://localhost:8000/ws/alerts');
+  useWebSocket(WS_BASE + '/alerts');
 
   return (
     <div className="app-layout">

@@ -6,7 +6,7 @@ import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-const API_BASE = 'http://localhost:8000/api/v1';
+import { API_BASE } from '../config';
 
 // Fix leafet marker icon issue
 const redIcon = new L.Icon({
