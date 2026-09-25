@@ -93,11 +93,18 @@ function AnimatedRoutes() {
 }
 
 function App() {
-  const [booting, setBooting] = useState(true);
+  const [booting, setBooting] = useState(() => {
+    return !sessionStorage.getItem('ignis_booted');
+  });
+
+  const handleBootComplete = () => {
+    sessionStorage.setItem('ignis_booted', 'true');
+    setBooting(false);
+  };
 
   return (
     <SettingsProvider>
-      {booting && <SplashScreen onComplete={() => setBooting(false)} />}
+      {booting && <SplashScreen onComplete={handleBootComplete} />}
       <BrowserRouter>
         <AnimatedRoutes />
       </BrowserRouter>
