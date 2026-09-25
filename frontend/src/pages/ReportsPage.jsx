@@ -1,22 +1,63 @@
-import React, { useState } from 'react';
-import { FileText, Download, Calendar, Loader2 } from 'lucide-react';
-import axios from 'axios';
-
-const API_BASE = 'http://localhost:8000/api/v1';
+import React, { useState, useEffect } from 'react';
+import { FileText, Download, Calendar, Filter, Database, AlertCircle, Loader2 } from 'lucide-react';
+import { fetchReportSummary, generateReport } from '../api';
 
 export default function ReportsPage() {
+  const [summary, setSummary] = useState({
+    total_hotspots: 0,
+    industrial_fires: 0,
+    open_alerts: 0,
+    report_available: false
+  });
+  
+  const [filters, setFilters] = useState({
+    date_from: '',
+    date_to: '',
+    ml_label: ''
+  });
+  
   const [generating, setGenerating] = useState(false);
-  const [reportUrl, setReportUrl] = useState(null);
+  const [lastGeneratedTime, setLastGeneratedTime] = useState(null);
 
-  const handleGenerate = async (format = 'csv') => {
+  useEffect(() => {
+    const loadSummary = async () => {
+      try {
+        const data = await fetchReportSummary();
+        setSummary(data);
+      } catch (err) {
+        console.error("Failed to load report summary", err);
+      }
+    };
+    loadSummary();
+  }, []);
+
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleGenerate = async () => {
     setGenerating(true);
-    setReportUrl(null);
+    setLastGeneratedTime(null);
     try {
-      const response = await axios.post(`${API_BASE}/reports/generate`, null, {
-        responseType: 'blob',
-      });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      setReportUrl(url);
+      // Clean up empty filters
+      const activeFilters = {};
+      if (filters.date_from) activeFilters.date_from = filters.date_from;
+      if (filters.date_to) activeFilters.date_to = filters.date_to;
+      if (filters.ml_label) activeFilters.ml_label = filters.ml_label;
+
+      const blob = await generateReport(activeFilters);
+      
+      // Programmatically download the file
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `ignis_report_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      
+      setLastGeneratedTime(new Date().toLocaleTimeString());
     } catch (err) {
       console.error('Report generation failed:', err);
     } finally {
@@ -25,55 +66,127 @@ export default function ReportsPage() {
   };
 
   return (
-    <div style={{ padding: '1.5rem', maxWidth: 800, margin: '0 auto' }}>
-      <h1 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: 10 }}>
-        <FileText size={24} /> Reports
-      </h1>
-      <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
-        Generate and download classified hotspot reports for analysis and compliance.
-      </p>
+    <div style={{ height: '100%', width: '100%', padding: '24px 32px', display: 'flex', flexDirection: 'column', gap: '24px', overflowY: 'auto' }}>
+      
+      {/* Header */}
+      <div>
+        <h1 style={{ fontSize: '24px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <FileText size={28} color="var(--color-facility)" /> Intelligence Reports
+        </h1>
+        <p style={{ color: 'var(--text-secondary)', marginTop: '8px' }}>
+          Configure, generate, and export classified hotspot and anomaly data for offline analysis.
+        </p>
+      </div>
 
-      <div className="glass-card" style={{ padding: '2rem' }}>
-        <h3 style={{ marginBottom: '1rem' }}>Generate New Report</h3>
+      <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+        
+        {/* Left Col: Export Configuration */}
+        <div className="glass-panel" style={{ flex: '1 1 500px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 600, borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Filter size={20} color="var(--text-secondary)" /> Report Configuration
+          </h2>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', gap: '16px' }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: 'block', fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '8px' }}>Date From</label>
+                <input 
+                  type="date" 
+                  name="date_from"
+                  value={filters.date_from}
+                  onChange={handleFilterChange}
+                  style={{ width: '100%', colorScheme: 'dark', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-primary)', padding: '10px 14px', outline: 'none', fontSize: '13px' }}
+                />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: 'block', fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '8px' }}>Date To</label>
+                <input 
+                  type="date" 
+                  name="date_to"
+                  value={filters.date_to}
+                  onChange={handleFilterChange}
+                  style={{ width: '100%', colorScheme: 'dark', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-primary)', padding: '10px 14px', outline: 'none', fontSize: '13px' }}
+                />
+              </div>
+            </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-          <div className="glass-card" style={{ padding: '1rem', cursor: 'pointer', textAlign: 'center', border: '1px solid var(--border)' }}>
-            <Calendar size={28} style={{ marginBottom: 8, color: 'var(--accent)' }} />
-            <div style={{ fontWeight: 500 }}>Last 7 Days</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Default report range</div>
+            <div>
+              <label style={{ display: 'block', fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '8px' }}>Classification Type</label>
+              <select 
+                name="ml_label"
+                value={filters.ml_label}
+                onChange={handleFilterChange}
+                style={{ width: '100%', colorScheme: 'dark', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-primary)', padding: '10px 14px', outline: 'none', fontSize: '13px' }}
+              >
+                <option value="" style={{background: 'var(--bg-card)'}}>All Classifications</option>
+                <option value="Industrial Fire" style={{background: 'var(--bg-card)'}}>Industrial Fire</option>
+                <option value="Forest Fire" style={{background: 'var(--bg-card)'}}>Forest Fire</option>
+                <option value="Gas Flare" style={{background: 'var(--bg-card)'}}>Gas Flare</option>
+                <option value="Agricultural Burn" style={{background: 'var(--bg-card)'}}>Agricultural Burn</option>
+                <option value="Mining/Thermal" style={{background: 'var(--bg-card)'}}>Mining/Thermal</option>
+              </select>
+            </div>
           </div>
-          <div className="glass-card" style={{ padding: '1rem', cursor: 'pointer', textAlign: 'center', border: '1px solid var(--border)', opacity: 0.6 }}>
-            <Calendar size={28} style={{ marginBottom: 8, color: 'var(--text-secondary)' }} />
-            <div style={{ fontWeight: 500 }}>Custom Range</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Select date range</div>
+
+          <div style={{ marginTop: 'auto', paddingTop: '16px' }}>
+            <button
+              onClick={handleGenerate}
+              disabled={generating}
+              style={{ 
+                width: '100%', padding: '12px', fontSize: '15px', fontWeight: 600, borderRadius: '8px', 
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                background: 'linear-gradient(135deg, #00a8ff, #3742fa)',
+                color: '#fff', border: 'none', cursor: generating ? 'wait' : 'pointer'
+              }}
+            >
+              {generating ? <><Loader2 size={20} className="spin" /> Generating Data Payload…</> : <><Download size={20} /> Generate & Download CSV</>}
+            </button>
+            
+            {lastGeneratedTime && (
+              <div style={{ marginTop: '12px', fontSize: '13px', color: '#2ed573', textAlign: 'center' }}>
+                ✓ Report successfully exported at {lastGeneratedTime}
+              </div>
+            )}
           </div>
         </div>
 
-        <button
-          onClick={() => handleGenerate('csv')}
-          disabled={generating}
-          style={{
-            padding: '0.75rem 2rem', borderRadius: 8, border: 'none', fontWeight: 600,
-            cursor: generating ? 'wait' : 'pointer', fontSize: '0.95rem', width: '100%',
-            background: 'linear-gradient(135deg, var(--accent), #f97316)',
-            color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-          }}
-        >
-          {generating ? <><Loader2 size={18} className="spin" /> Generating…</> : <><Download size={18} /> Generate CSV Report</>}
-        </button>
+        {/* Right Col: Database Summary */}
+        <div style={{ flex: '1 1 350px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          
+          <div className="glass-panel" style={{ padding: '24px' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 600, borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Database size={20} color="var(--text-secondary)" /> Database Summary
+            </h2>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', backgroundColor: 'var(--bg-main)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Total Anomalies Logged</span>
+                <span style={{ fontSize: '18px', fontWeight: 600 }}>{summary.total_hotspots.toLocaleString()}</span>
+              </div>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', backgroundColor: 'rgba(239, 68, 68, 0.05)', borderRadius: '8px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Industrial Fires Detected</span>
+                <span style={{ fontSize: '18px', fontWeight: 600, color: '#ef4444' }}>{summary.industrial_fires.toLocaleString()}</span>
+              </div>
 
-        {reportUrl && (
-          <div style={{ marginTop: '1.5rem', padding: '1rem', borderRadius: 8, background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)' }}>
-            <p style={{ color: '#22c55e', fontWeight: 500, marginBottom: 8 }}>✅ Report generated successfully!</p>
-            <a
-              href={reportUrl}
-              download="ignis_report.csv"
-              style={{ color: 'var(--accent)', fontWeight: 600 }}
-            >
-              ⬇ Download ignis_report.csv
-            </a>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', backgroundColor: 'rgba(255, 165, 2, 0.05)', borderRadius: '8px', border: '1px solid rgba(255, 165, 2, 0.2)' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Open Alerts Requires Review</span>
+                <span style={{ fontSize: '18px', fontWeight: 600, color: '#ffa502' }}>{summary.open_alerts.toLocaleString()}</span>
+              </div>
+            </div>
           </div>
-        )}
+
+          <div className="glass-panel" style={{ padding: '24px', flex: 1 }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 600, borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <AlertCircle size={20} color="var(--text-secondary)" /> Data Compliance
+            </h2>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+              All exported CSV files contain classified NTRO intelligence. Reports must be handled according to strict internal security protocols. 
+              Data retention policies mandate that unverified hotspot logs older than 90 days are automatically archived.
+            </p>
+          </div>
+
+        </div>
       </div>
     </div>
   );

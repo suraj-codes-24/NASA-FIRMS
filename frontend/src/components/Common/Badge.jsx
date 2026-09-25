@@ -3,14 +3,14 @@ import React from 'react';
 const SEVERITY_COLORS = {
   critical: { bg: 'rgba(231, 76, 60, 0.15)', text: '#e74c3c', border: 'rgba(231, 76, 60, 0.3)' },
   high:     { bg: 'rgba(230, 126, 34, 0.15)', text: '#e67e22', border: 'rgba(230, 126, 34, 0.3)' },
-  medium:   { bg: 'rgba(241, 196, 15, 0.15)', text: '#f1c40f', border: 'rgba(241, 196, 15, 0.3)' },
+  medium:   { bg: 'rgba(234, 179, 8, 0.15)', text: '#eab308', border: 'rgba(234, 179, 8, 0.3)' },
   low:      { bg: 'rgba(46, 204, 113, 0.15)', text: '#2ecc71', border: 'rgba(46, 204, 113, 0.3)' },
 };
 
 const TYPE_COLORS = {
   'Industrial Fire':   { bg: 'rgba(231, 76, 60, 0.15)', text: '#e74c3c' },
   'Forest Fire':       { bg: 'rgba(230, 126, 34, 0.15)', text: '#e67e22' },
-  'Gas Flare':         { bg: 'rgba(241, 196, 15, 0.15)', text: '#f1c40f' },
+  'Gas Flare':         { bg: 'rgba(234, 179, 8, 0.15)', text: '#eab308' },
   'Agricultural Burn': { bg: 'rgba(46, 204, 113, 0.15)', text: '#2ecc71' },
   'Mining/Thermal':    { bg: 'rgba(52, 152, 219, 0.15)', text: '#3498db' },
   'Unclassified':      { bg: 'rgba(149, 165, 166, 0.15)', text: '#95a5a6' },

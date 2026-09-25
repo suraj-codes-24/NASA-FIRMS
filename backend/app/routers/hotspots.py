@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
+from sqlalchemy.orm import joinedload
 from typing import List, Optional
 from geoalchemy2.elements import WKTElement
 from geoalchemy2.functions import ST_DWithin, ST_X, ST_Y
@@ -56,6 +57,15 @@ async def ingest_hotspots(
     
     return {"message": f"Ingested {len(hotspot_ids)} hotspots for processing.", "ids": hotspot_ids}
 
+@router.post("/trigger-ingestion", status_code=202)
+async def trigger_nasa_firms_ingestion():
+    """
+    Manually trigger the NASA FIRMS data ingestion celery task.
+    """
+    from app.tasks.nasa_tasks import fetch_nasa_firms_data
+    fetch_nasa_firms_data.delay()
+    return {"message": "NASA FIRMS ingestion task triggered in background."}
+
 @router.get("", response_model=List[HotspotResponse])
 async def get_hotspots(
     limit: int = Query(100, ge=1, le=1000),
@@ -72,7 +82,7 @@ async def get_hotspots(
     Retrieve hotspots with filtering. Supports date range, classification type,
     confidence threshold, bounding box, and pagination.
     """
-    query = select(Hotspot).order_by(Hotspot.acq_date.desc())
+    query = select(Hotspot).options(joinedload(Hotspot.nearest_facility)).order_by(Hotspot.acq_date.desc())
     
     if ml_label:
         query = query.filter(Hotspot.ml_label == ml_label)
@@ -109,7 +119,7 @@ async def get_latest_hotspots(
     """
     Get the most recently ingested hotspots.
     """
-    query = select(Hotspot).order_by(Hotspot.created_at.desc()).limit(limit)
+    query = select(Hotspot).options(joinedload(Hotspot.nearest_facility)).order_by(Hotspot.created_at.desc()).limit(limit)
     result = await db.execute(query)
     return result.scalars().all()
 
@@ -145,7 +155,9 @@ async def get_hotspot(
     """
     Get full details of a single hotspot by ID.
     """
-    hotspot = await db.get(Hotspot, hotspot_id)
+    query = select(Hotspot).options(joinedload(Hotspot.nearest_facility)).filter(Hotspot.id == hotspot_id)
+    result = await db.execute(query)
+    hotspot = result.scalar_one_or_none()
     if not hotspot:
         raise HTTPException(status_code=404, detail="Hotspot not found")
     return hotspot
@@ -173,7 +185,7 @@ async def get_hotspot_history(
     ).order_by(Hotspot.acq_date.desc()).limit(200)
     
     # Simplified approach: just filter by coordinate proximity
-    query = select(Hotspot).filter(
+    query = select(Hotspot).options(joinedload(Hotspot.nearest_facility)).filter(
         and_(
             Hotspot.latitude.between(hotspot.latitude - 0.01, hotspot.latitude + 0.01),
             Hotspot.longitude.between(hotspot.longitude - 0.01, hotspot.longitude + 0.01),

@@ -7,8 +7,10 @@ class FacilityBase(BaseModel):
     osm_id: str
     name: Optional[str] = None
     facility_type: str
-    latitude: float
-    longitude: float
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    state: Optional[str] = None
+    district: Optional[str] = None
 
 class FacilityResponse(FacilityBase):
     id: int
@@ -65,6 +67,10 @@ class HotspotResponse(BaseModel):
     classification_confidence: Optional[float] = None
     is_user_verified: bool
     
+    # Relationships
+    nearest_facility_id: Optional[int] = None
+    nearest_facility: Optional[FacilityResponse] = None
+    
     model_config = ConfigDict(from_attributes=True)
 
 class HeatmapPoint(BaseModel):
@@ -99,6 +105,7 @@ class AlertResponse(AlertBase):
     id: int
     created_at: datetime.datetime
     resolution_note: Optional[str] = None
+    hotspot: Optional[HotspotResponse] = None
     
     model_config = ConfigDict(from_attributes=True)
 

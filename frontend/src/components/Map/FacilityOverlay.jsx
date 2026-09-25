@@ -1,7 +1,7 @@
 import React from 'react';
 import { CircleMarker, Popup, Circle } from 'react-leaflet';
 
-const FACILITY_COLOR = '#8b5cf6'; // Purple
+const FACILITY_COLOR = '#3b82f6'; // Blue
 const BUFFER_RADIUS = 2000; // 2km buffer zone
 
 /**

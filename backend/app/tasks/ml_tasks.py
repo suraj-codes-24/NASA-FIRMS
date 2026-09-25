@@ -164,9 +164,8 @@ def process_hotspots_batch(hotspot_ids: list[int]):
             db.add(log)
             
             # Check for Alerts
-            if ml_enum_val == MLClassificationEnum.INDUSTRIAL_FIRE and h.frp > 100.0:
-                alert = Alert(hotspot_id=h.id, alert_type="HIGH_FRP_INDUSTRIAL_FIRE")
-                db.add(alert)
+            from app.services.alert_service import create_alert_if_needed
+            create_alert_if_needed(db, h)
                 
         db.commit()
         

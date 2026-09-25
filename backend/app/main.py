@@ -31,8 +31,11 @@ async def lifespan(app: FastAPI):
 
     # Initialize database tables (development only)
     if settings.app_env == "development":
-        await init_db()
-        logger.info("   Database tables initialized")
+        try:
+            await init_db()
+            logger.info("   Database tables initialized")
+        except Exception as e:
+            logger.warning(f"   Database connection failed (mock mode active): {e}")
 
     logger.info("🔥 IGNIS is ready!")
     yield
@@ -94,7 +97,7 @@ async def root():
 # ----- Router Registration -----
 # Routers will be imported and mounted here as they are implemented
 from app.routers import hotspots, facilities, analytics, alerts, websocket
-from app.routers import reports, auth
+from app.routers import reports, auth, settings as settings_router
 app.include_router(hotspots.router, prefix="/api/v1")
 app.include_router(facilities.router, prefix="/api/v1")
 app.include_router(analytics.router, prefix="/api/v1/analytics", tags=["Analytics"])
@@ -102,3 +105,4 @@ app.include_router(alerts.router, prefix="/api/v1/alerts", tags=["Alerts"])
 app.include_router(websocket.router, tags=["WebSocket"])
 app.include_router(reports.router, prefix="/api/v1/reports", tags=["Reports"])
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
+app.include_router(settings_router.router, prefix="/api/v1/settings", tags=["Settings"])

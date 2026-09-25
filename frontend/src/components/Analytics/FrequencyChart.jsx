@@ -1,5 +1,29 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
 import { Line } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+} from 'chart.js';
+import { fetchAnalyticsTimeline } from '../../api';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+);
 
 const chartOptions = {
   responsive: true,
@@ -13,26 +37,37 @@ const chartOptions = {
         color: '#a0aec0',
         usePointStyle: true,
         pointStyle: 'circle',
-        boxWidth: 6,
+        boxWidth: 8,
         padding: 20,
-        font: { size: 11, family: 'Inter' }
+        font: { size: 12, family: 'Inter, sans-serif', weight: 500 }
       }
     },
     tooltip: {
       mode: 'index',
       intersect: false,
+      backgroundColor: 'rgba(15, 17, 26, 0.9)',
+      titleColor: '#fff',
+      bodyColor: '#a0aec0',
+      borderColor: 'rgba(255,255,255,0.1)',
+      borderWidth: 1,
+      padding: 12,
+      boxPadding: 6,
+      usePointStyle: true,
+      titleFont: { size: 13, family: 'Inter', weight: 600 },
+      bodyFont: { size: 12, family: 'Inter' }
     },
   },
   scales: {
     x: {
-      grid: { color: 'rgba(255,255,255,0.05)' },
-      ticks: { color: '#718096', font: { size: 10 } }
+      border: { display: false },
+      grid: { color: 'rgba(255,255,255,0.03)' },
+      ticks: { color: '#718096', font: { size: 11, family: 'Inter' }, padding: 10 }
     },
     y: {
-      grid: { color: 'rgba(255,255,255,0.05)' },
-      ticks: { color: '#718096', font: { size: 10 } },
-      min: 0,
-      max: 100
+      border: { display: false },
+      grid: { color: 'rgba(255,255,255,0.03)' },
+      ticks: { color: '#718096', font: { size: 11, family: 'Inter' }, padding: 10 },
+      beginAtZero: true
     }
   },
   interaction: {
@@ -42,55 +77,138 @@ const chartOptions = {
   }
 };
 
-const FrequencyChart = () => {
-  const labels = ['01 Oct', '02 Oct', '03 Oct', '04 Oct', '05 Oct', '06 Oct', '07 Oct', '08 Oct', '09 Oct', '10 Oct', '11 Oct', '12 Oct', '13 Oct', '14 Oct'];
-  
-  const data = {
-    labels,
-    datasets: [
-      {
-        label: 'Industrial Fires',
-        data: [85, 45, 25, 45, 20, 60, 40, 25, 75, 45, 80, 45, 95, 55],
-        borderColor: '#ff4757',
-        backgroundColor: '#ff4757',
-        tension: 0.4,
-        pointRadius: 3,
-      },
-      {
-        label: 'Forest Fires',
-        data: [35, 10, 15, 25, 30, 85, 50, 48, 90, 30, 75, 35, 20, 15],
-        borderColor: '#ffa502',
-        backgroundColor: '#ffa502',
-        tension: 0.4,
-        pointRadius: 3,
-      },
-      {
-        label: 'Total',
-        data: [100, 55, 30, 50, 35, 95, 60, 55, 98, 55, 90, 60, 98, 65], // Simplified total
-        borderColor: '#1e90ff',
-        backgroundColor: '#1e90ff',
-        tension: 0.4,
-        pointRadius: 3,
-      },
-      // Adding a subtle green line for Agricultural
-      {
-        label: 'Agricultural',
-        data: [5, 5, 5, 8, 10, 15, 12, 10, 20, 10, 15, 12, 5, 2],
-        borderColor: '#2ed573',
-        backgroundColor: '#2ed573',
-        tension: 0.4,
-        pointRadius: 3,
+const FrequencyChart = ({ filters }) => {
+  const [chartData, setChartData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const activeFilters = {};
+        if (filters?.date_from) activeFilters.date_from = filters.date_from;
+        if (filters?.date_to) activeFilters.date_to = filters.date_to;
+        if (filters?.ml_label) activeFilters.ml_label = filters.ml_label;
+        if (filters?.min_confidence > 0) activeFilters.min_confidence = filters.min_confidence;
+
+        const rawData = await fetchAnalyticsTimeline(activeFilters);
+
+        // 1. Extract all unique dates and sort them
+        const datesSet = new Set();
+        rawData.forEach(item => datesSet.add(item.date));
+        const sortedDates = Array.from(datesSet).sort();
+        
+        // Use last 14 days of data available (or less)
+        const labels = sortedDates.slice(-14);
+        
+        // 2. Initialize dataset arrays
+        const miningData = labels.map(() => 0);
+        const agriData = labels.map(() => 0);
+        const gasData = labels.map(() => 0);
+        const industrialData = labels.map(() => 0);
+
+        // 3. Fill datasets
+        rawData.forEach(item => {
+          const dateIndex = labels.indexOf(item.date);
+          if (dateIndex !== -1) {
+            const label = item.ml_label || '';
+            if (label === 'Mining/Thermal' || label === 'MINING_THERMAL') {
+              miningData[dateIndex] += item.count;
+            } else if (label === 'Agricultural Burn' || label === 'AGRICULTURAL_BURN') {
+              agriData[dateIndex] += item.count;
+            } else if (label === 'Gas Flare' || label === 'GAS_FLARE') {
+              gasData[dateIndex] += item.count;
+            } else if (label === 'Industrial Fire' || label === 'INDUSTRIAL_FIRE') {
+              industrialData[dateIndex] += item.count;
+            }
+          }
+        });
+
+        // Add formatted date labels
+        const formattedLabels = labels.map(d => {
+          const dateObj = new Date(d);
+          return dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        });
+
+        setChartData({
+          labels: formattedLabels,
+          datasets: [
+            {
+              label: 'Industrial Fire',
+              data: industrialData,
+              borderColor: '#ef4444',
+              backgroundColor: 'rgba(239, 68, 68, 0.1)',
+              borderWidth: 2,
+              tension: 0.4,
+              pointRadius: 0,
+              pointHoverRadius: 6,
+              fill: true,
+            },
+            {
+              label: 'Mining & Thermal',
+              data: miningData,
+              borderColor: '#3b82f6',
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              borderWidth: 2,
+              tension: 0.4,
+              pointRadius: 0,
+              pointHoverRadius: 6,
+              fill: true,
+            },
+            {
+              label: 'Agricultural Burn',
+              data: agriData,
+              borderColor: '#10b981',
+              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+              borderWidth: 2,
+              tension: 0.4,
+              pointRadius: 0,
+              pointHoverRadius: 6,
+              fill: true,
+            },
+            {
+              label: 'Gas Flare',
+              data: gasData,
+              borderColor: '#eab308',
+              backgroundColor: 'rgba(234, 179, 8, 0.1)',
+              borderWidth: 2,
+              tension: 0.4,
+              pointRadius: 0,
+              pointHoverRadius: 6,
+              fill: true,
+            }
+          ],
+        });
+        console.log("Chart Data Set Successfully:", formattedLabels, industrialData, miningData);
+      } catch (err) {
+        console.error("Failed to load chart data:", err);
+      } finally {
+        setLoading(false);
       }
-    ],
-  };
+    };
+
+    loadData();
+  }, [filters]);
+
+  if (!chartData) return <div className="glass-panel" style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading Chart Data...</div>;
 
   return (
-    <div className="glass-panel" style={{ height: '220px', padding: '15px 20px', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-        <h3 style={{ fontSize: '13px', fontWeight: 600, letterSpacing: '0.5px' }}>Fire Frequency Over Time (Oct 2023)</h3>
+    <div className="glass-panel" style={{ height: '320px', padding: '20px 24px', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <h3 style={{ fontSize: '15px', fontWeight: 600, letterSpacing: '0.5px', color: '#fff', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          Anomaly Frequency (14-Day Trend)
+          {loading && <Loader2 size={14} color="#00a8ff" className="spin" />}
+        </h3>
+        <span style={{ fontSize: '12px', color: 'var(--text-muted)', padding: '4px 10px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '12px' }}>
+          Real-time API
+        </span>
       </div>
       <div style={{ flex: 1, position: 'relative' }}>
-        <Line options={chartOptions} data={data} />
+        {chartData && chartData.labels && chartData.labels.length > 0 ? (
+          <Line options={chartOptions} data={chartData} />
+        ) : (
+          <div style={{ color: 'var(--text-muted)' }}>No historical data available.</div>
+        )}
       </div>
     </div>
   );

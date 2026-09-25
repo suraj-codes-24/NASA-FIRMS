@@ -5,7 +5,7 @@ const FIRE_TYPES = [
   { value: null, label: 'All Types', color: '#ffffff' },
   { value: 'Industrial Fire', label: 'Industrial Fire', color: '#e74c3c' },
   { value: 'Forest Fire', label: 'Forest Fire', color: '#e67e22' },
-  { value: 'Gas Flare', label: 'Gas Flare', color: '#f1c40f' },
+  { value: 'Gas Flare', label: 'Gas Flare', color: '#eab308' },
   { value: 'Agricultural Burn', label: 'Agricultural Burn', color: '#2ecc71' },
   { value: 'Mining/Thermal', label: 'Mining / Thermal', color: '#3498db' },
   { value: 'Unclassified', label: 'Unclassified', color: '#95a5a6' },

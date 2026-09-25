@@ -17,7 +17,7 @@ export const FIRE_TYPES = {
 export const FIRE_COLORS = {
   [FIRE_TYPES.INDUSTRIAL_FIRE]: '#e74c3c',
   [FIRE_TYPES.FOREST_FIRE]: '#e67e22',
-  [FIRE_TYPES.GAS_FLARE]: '#f1c40f',
+  [FIRE_TYPES.GAS_FLARE]: '#eab308',
   [FIRE_TYPES.AGRICULTURAL_BURN]: '#2ecc71',
   [FIRE_TYPES.MINING_THERMAL]: '#3498db',
   [FIRE_TYPES.UNCLASSIFIED]: '#95a5a6',
@@ -44,7 +44,7 @@ export const FIRE_EMOJIS = {
 export const SEVERITY_COLORS = {
   critical: '#e74c3c',
   high: '#e67e22',
-  medium: '#f1c40f',
+  medium: '#eab308',
   low: '#3498db',
 }
 
@@ -52,6 +52,6 @@ export const SEVERITY_COLORS = {
 export const INDIA_CENTER = [22.5, 82.0]
 export const DEFAULT_ZOOM = 5
 
-// CartoDB Dark Matter tile layer (§9.4)
-export const MAP_TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-export const MAP_TILE_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+// ESRI Dark Gray Base tile layer
+export const MAP_TILE_URL = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}'
+export const MAP_TILE_ATTRIBUTION = 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ'

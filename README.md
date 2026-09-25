@@ -17,31 +17,32 @@
 
 ## 📖 Overview
 
-**IGNIS** is a comprehensive solution developed for **Smart India Hackathon (SIH) 2026** — Problem Statement **26162** (NTRO, Ministry of PMO). The system autonomously ingests VIIRS/MODIS satellite data from NASA FIRMS, enriches it with geospatial context (OSM facilities, land cover), and applies an ensemble Machine Learning model to accurately differentiate true **Industrial Fires** from forest fires, agricultural fires, and static thermal anomalies.
+**IGNIS** is a comprehensive solution developed for **Smart India Hackathon (SIH) 2026** — Problem Statement **26162** (NTRO, Ministry of PMO). The system autonomously ingests VIIRS/MODIS satellite data from NASA FIRMS, enriches it with geospatial context (OSM facilities, land cover), and applies a trained **Random Forest Machine Learning model** to accurately differentiate true **Industrial Fires** from forest fires, agricultural fires, and static thermal anomalies.
 
-When a critical industrial fire is detected, IGNIS triggers real-time WebSocket alerts to a state-of-the-art React dashboard, allowing field operators to view, acknowledge, and resolve incidents instantly.
+When a critical industrial fire is detected, IGNIS triggers real-time WebSocket alerts to a state-of-the-art React dashboard, allowing field operators to view, acknowledge, and resolve incidents instantly, while simultaneously pinging external emergency webhooks (Slack/Discord).
 
 ## ✨ Key Features
 
-- 🛰️ **Automated NASA FIRMS Ingestion**: Celery workers fetch live satellite anomaly data.
-- 🧠 **AI Classification Engine**: Ensemble ML model (Random Forest, XGBoost, LightGBM) trained on historical thermal profiles.
+- 🛰️ **Automated NASA FIRMS Ingestion**: Celery workers fetch live satellite anomaly data every 10 minutes.
+- 🧠 **AI Classification Engine**: A `scikit-learn` Random Forest Soft-Voting Classifier trained on 10,000+ historical thermal profiles.
 - 🗺️ **Geospatial Intelligence**: PostGIS integration for mapping hotspots against industrial infrastructure buffers.
-- ⚡ **Real-Time WebSocket Alerts**: Instant push notifications for critical industrial fire detections.
-- 📊 **Dynamic Glassmorphism Dashboard**: A visually stunning UI featuring interactive maps, timeline charts, and alert management.
-- 🕵️ **Human-in-the-loop Verification**: Feedback mechanism for ground truth updating.
+- ⚡ **Real-Time Alerting**: Instant WebSocket push notifications and external Webhook dispatch (Slack/Discord) for CRITICAL industrial fire detections.
+- 🔒 **Secure Authentication**: JWT-based OAuth2 secure login and registration system.
+- 📊 **Dynamic Glassmorphism Dashboard**: A visually stunning UI featuring interactive maps, timeline charts, and tactical intelligence screens.
 
 ## 🛠️ Tech Stack
 
 ### Frontend
 - **React.js + Vite**
+- **Framer Motion** for tactical HUD animations
 - **Leaflet.js** for interactive CartoDB mapping
 - **Chart.js** for analytics and time-series data
 - **Vanilla CSS** with a custom Glassmorphism Dark Theme
 
 ### Backend & AI
 - **FastAPI** (High-performance async API)
-- **Python Data Stack** (`pandas`, `scikit-learn`, `xgboost`, `lightgbm`)
-- **Celery & Redis** (Background task scheduling)
+- **Python Data Stack** (`pandas`, `scikit-learn`, `numpy`)
+- **Celery & Redis** (Background task scheduling & Ingestion)
 
 ### Database
 - **PostgreSQL + PostGIS** (Spatial data processing)
@@ -54,13 +55,14 @@ When a critical industrial fire is detected, IGNIS triggers real-time WebSocket 
 ```mermaid
 graph TD
     A[NASA FIRMS API] -->|VIIRS/MODIS Data| B(Celery Workers)
-    B -->|Ingestion & Preprocessing| C{Ensemble ML Model}
+    B -->|Spatial Enrichment| C{Random Forest ML}
     C -->|Classified Hotspots| D[(PostgreSQL + PostGIS)]
     
     D <-->|Queries & Geo-Joins| E[FastAPI Backend]
     
-    E <-->|REST API| F[React Frontend Dashboard]
+    E <-->|JWT Auth & REST API| F[React Frontend Dashboard]
     E -.->|WebSocket Push Alerts| F
+    E -.->|Critical Fire Webhooks| G[Slack / Discord]
     
     style A fill:#1a5276,color:#fff
     style B fill:#b9770e,color:#fff
@@ -68,114 +70,43 @@ graph TD
     style D fill:#229954,color:#fff
     style E fill:#ba4a00,color:#fff
     style F fill:#1abc9c,color:#fff
+    style G fill:#7289da,color:#fff
 ```
 
 ---
 
-## 🚀 Local Setup Instructions
+## 🚀 1-Click Deployment (Jury Ready)
 
-Follow these steps to run the IGNIS platform locally for demonstration purposes.
+To make testing incredibly simple for SIH Judges, the entire application has been containerized and pre-configured. **Zero manual setup is required.**
 
-### 1. Backend Setup
+### Prerequisites
+- [Docker](https://www.docker.com/) and Docker Compose installed on your system.
 
-Open a terminal and navigate to the `backend` directory:
+### Step 1: Boot the Platform
+Open your terminal in the project root directory and run:
 
 ```bash
-cd backend
-
-# Create a virtual environment
-python -m venv venv
-venv\Scripts\activate  # On Windows
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Start the FastAPI Server
-uvicorn app.main:app --reload --port 8000
+docker-compose up -d --build
 ```
-> **Note:** For local mock testing, the API includes Mock Auth and Report generation endpoints so a live PostgreSQL database is not strictly required to launch the UI.
+*Note: The first build may take ~2 minutes to compile heavy geospatial libraries (GDAL, GeoPandas).*
 
-### 2. Frontend Setup
+### Step 2: Access the Application
+- Open your browser and navigate to: **http://localhost:5173**
+- The backend automatically pre-seeds the database and API keys on boot!
 
-Open a new terminal and navigate to the `frontend` directory:
+### Step 3: Login
+Use the default administrator credentials:
+- **Email:** `admin@ignis.gov`
+- **Password:** `admin123`
 
-```bash
-cd frontend
-
-# Install Node modules
-npm install
-
-# Start the Vite Development Server
-npm run dev
-```
-
-Visit `http://localhost:5173` in your browser to interact with the IGNIS Dashboard.
+### Step 4: Test the Live Pipeline
+1. Navigate to the **Settings** page via the sidebar.
+2. Click **"FORCE IMMEDIATE SYNC"**.
+3. IGNIS will immediately fetch the latest global telemetry from NASA, run it through the Machine Learning inference engine, and populate the map!
 
 ---
 
-## 📚 API Documentation
+## 🛑 Troubleshooting
 
-Once the backend is running, you can explore the fully interactive Swagger UI documentation generated automatically by FastAPI:
-
-* **Swagger UI:** [http://localhost:8000/docs](http://localhost:8000/docs)
-* **ReDoc:** [http://localhost:8000/redoc](http://localhost:8000/redoc)
-
----
-
-## 📂 Project Structure
-
-```
-NASA-FIRMS/
-├── backend/              # FastAPI backend
-│   ├── app/
-│   │   ├── ml/           # ML model loading, training, evaluation, features
-│   │   ├── models/       # SQLAlchemy ORM models (PostGIS)
-│   │   ├── routers/      # API endpoint routers
-│   │   ├── schemas/      # Pydantic request/response schemas
-│   │   ├── services/     # FIRMS, OSM, spatial service modules
-│   │   ├── tasks/        # Celery background tasks
-│   │   └── utils/        # Constants, geo utilities
-│   └── tests/            # Backend unit tests
-├── frontend/             # React + Vite frontend
-│   └── src/
-│       ├── components/   # Dashboard, Map, Filters, Common, Analytics
-│       ├── hooks/        # Custom React hooks (WebSocket, API)
-│       ├── pages/        # Route pages
-│       └── styles/       # CSS modules (app, map, glassmorphism)
-├── ml_pipeline/          # Standalone ML training pipeline
-│   ├── notebooks/        # Jupyter exploration notebooks
-│   └── scripts/          # train_model.py (RF + XGBoost + LightGBM)
-├── configs/              # Nginx, environment configs
-├── data/                 # Models, datasets (gitignored)
-├── scripts/              # Data download utilities
-├── tests/                # Root test suite (unit, API, integration)
-└── docker-compose.yml    # Full stack orchestration (7 services)
-```
-
-## 🧠 ML Pipeline
-
-| Metric | Target | Achieved |
-|--------|--------|----------|
-| Overall Accuracy | > 85% | **99.9%** |
-| Macro F1-Score | > 0.82 | **0.999** |
-| Industrial Fire Recall | > 90% | **100%** |
-| Gas Flare Precision | > 90% | **100%** |
-
-The model uses a **Soft-Voting Ensemble** of Random Forest, XGBoost, and LightGBM trained on 16 engineered features including brightness ratio, FRP, pixel area, persistence hours, recurrence count, and land cover class.
-
-## 🐳 Docker Setup (Full Stack)
-
-```bash
-# Start all 7 services (backend, frontend, postgres, redis, celery, nginx, flower)
-docker-compose up --build
-```
-
-Access the platform at `http://localhost` (Nginx reverse proxy).
-
----
-
-<div align="center">
-  <i>Built with ❤️ for Smart India Hackathon 2026</i>
-  <br />
-  <sub>Problem Statement 26162 · NTRO · Ministry of PMO</sub>
-</div>
+- **No data appearing on the map?** Ensure you hit the "Force Immediate Sync" button in Settings. NASA satellites only pass over intermittently, so live data updates naturally every few hours.
+- **Backend logs:** To see the ML engine making predictions in real-time, run `docker logs -f ignis-worker`.

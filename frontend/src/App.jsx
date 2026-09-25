@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
+import SplashScreen from './components/layout/SplashScreen';
 import MapDashboard from './pages/MapDashboard';
 import AnalyticsDashboard from './pages/AnalyticsDashboard';
 import AlertsDashboard from './pages/AlertsDashboard';
@@ -11,6 +12,7 @@ import ReportsPage from './pages/ReportsPage';
 import SettingsPage from './pages/SettingsPage';
 import LoginPage from './pages/LoginPage';
 import useWebSocket from './hooks/useWebSocket';
+import { SettingsProvider } from './contexts/SettingsContext';
 import './App.css';
 
 const pageVariants = {
@@ -53,8 +55,20 @@ function AppLayout({ children }) {
   );
 }
 
+function ProtectedRoute({ children }) {
+  const token = localStorage.getItem('ignis_token');
+  const location = useLocation();
+
+  if (!token) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  return children;
+}
+
 function AnimatedRoutes() {
   const location = useLocation();
+
 
   return (
     <AnimatePresence mode="wait">
@@ -62,13 +76,13 @@ function AnimatedRoutes() {
         {/* Login page — no sidebar/header layout */}
         <Route path="/login" element={<PageWrapper><LoginPage /></PageWrapper>} />
 
-        {/* All dashboard routes wrapped in AppLayout */}
-        <Route path="/" element={<AppLayout><PageWrapper><MapDashboard /></PageWrapper></AppLayout>} />
-        <Route path="/analytics" element={<AppLayout><PageWrapper><AnalyticsDashboard /></PageWrapper></AppLayout>} />
-        <Route path="/alerts" element={<AppLayout><PageWrapper><AlertsDashboard /></PageWrapper></AppLayout>} />
-        <Route path="/hotspot/:id" element={<AppLayout><PageWrapper><HotspotDetailPage /></PageWrapper></AppLayout>} />
-        <Route path="/reports" element={<AppLayout><PageWrapper><ReportsPage /></PageWrapper></AppLayout>} />
-        <Route path="/settings" element={<AppLayout><PageWrapper><SettingsPage /></PageWrapper></AppLayout>} />
+        {/* All dashboard routes wrapped in AppLayout and ProtectedRoute */}
+        <Route path="/" element={<ProtectedRoute><AppLayout><PageWrapper><MapDashboard /></PageWrapper></AppLayout></ProtectedRoute>} />
+        <Route path="/analytics" element={<ProtectedRoute><AppLayout><PageWrapper><AnalyticsDashboard /></PageWrapper></AppLayout></ProtectedRoute>} />
+        <Route path="/alerts" element={<ProtectedRoute><AppLayout><PageWrapper><AlertsDashboard /></PageWrapper></AppLayout></ProtectedRoute>} />
+        <Route path="/hotspot/:id" element={<ProtectedRoute><AppLayout><PageWrapper><HotspotDetailPage /></PageWrapper></AppLayout></ProtectedRoute>} />
+        <Route path="/reports" element={<ProtectedRoute><AppLayout><PageWrapper><ReportsPage /></PageWrapper></AppLayout></ProtectedRoute>} />
+        <Route path="/settings" element={<ProtectedRoute><AppLayout><PageWrapper><SettingsPage /></PageWrapper></AppLayout></ProtectedRoute>} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
@@ -78,10 +92,15 @@ function AnimatedRoutes() {
 }
 
 function App() {
+  const [booting, setBooting] = useState(true);
+
   return (
-    <BrowserRouter>
-      <AnimatedRoutes />
-    </BrowserRouter>
+    <SettingsProvider>
+      {booting && <SplashScreen onComplete={() => setBooting(false)} />}
+      <BrowserRouter>
+        <AnimatedRoutes />
+      </BrowserRouter>
+    </SettingsProvider>
   );
 }
 

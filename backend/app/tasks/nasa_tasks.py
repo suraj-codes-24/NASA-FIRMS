@@ -1,13 +1,13 @@
 import logging
 import datetime
-import requests
+import httpx as requests
 import pandas as pd
 import io
 from celery import shared_task
 from geoalchemy2.elements import WKTElement
 
 from app.database import SyncSessionLocal
-from app.models.spatial import Hotspot, MLClassificationEnum
+from app.models.spatial import Hotspot, MLClassificationEnum, SystemSetting
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -24,15 +24,45 @@ def fetch_nasa_firms_data():
     """
     logger.info("Starting NASA FIRMS ingestion task...")
     
+    with SyncSessionLocal() as db:
+        settings_rows = db.query(SystemSetting).all()
+        prefs = {s.key: s.value for s in settings_rows}
+        
+        ingestion_interval_hours = float(prefs.get("settings_ingestion", "3"))
+        last_ingestion_time_str = prefs.get("last_ingestion_time")
+        
+        now = datetime.datetime.utcnow()
+        if last_ingestion_time_str:
+            try:
+                # Python 3.11 datetime.fromisoformat can parse standard iso format
+                last_time = datetime.datetime.fromisoformat(last_ingestion_time_str)
+                elapsed = (now - last_time).total_seconds() / 3600.0
+                if elapsed < ingestion_interval_hours:
+                    logger.info(f"Skipping ingestion. Elapsed {elapsed:.2f}h < {ingestion_interval_hours}h interval.")
+                    return False
+            except Exception as e:
+                logger.error(f"Error parsing last_ingestion_time: {e}")
+                
+        # Update last ingestion time
+        last_ing_setting = db.query(SystemSetting).filter(SystemSetting.key == "last_ingestion_time").first()
+        if last_ing_setting:
+            last_ing_setting.value = now.isoformat()
+        else:
+            db.add(SystemSetting(key="last_ingestion_time", value=now.isoformat()))
+        db.commit()
+    
     urls_to_fetch = []
     
-    if settings.firms_map_key:
+    # Priority: DB Setting > Env Var
+    active_api_key = prefs.get("settings_nasa_key") or settings.firms_map_key
+    
+    if active_api_key and active_api_key != "your_nasa_firms_api_key_here":
         # If MAP KEY is provided, use the Area API for India's Bounding Box
         bbox = settings.india_bbox
         # VIIRS SNPP 24h
-        urls_to_fetch.append(f"https://firms.modaps.eosdis.nasa.gov/api/area/csv/{settings.firms_map_key}/VIIRS_SNPP_NRT/{bbox}/1")
+        urls_to_fetch.append(f"https://firms.modaps.eosdis.nasa.gov/api/area/csv/{active_api_key}/VIIRS_SNPP_NRT/{bbox}/1")
         # MODIS 24h
-        urls_to_fetch.append(f"https://firms.modaps.eosdis.nasa.gov/api/area/csv/{settings.firms_map_key}/MODIS_NRT/{bbox}/1")
+        urls_to_fetch.append(f"https://firms.modaps.eosdis.nasa.gov/api/area/csv/{active_api_key}/MODIS_NRT/{bbox}/1")
     else:
         # Fallback to public South Asia 24h CSVs
         logger.warning("No FIRMS_MAP_KEY provided. Falling back to public 24-hr South Asia CSVs.")
@@ -68,6 +98,7 @@ def fetch_nasa_firms_data():
         
     combined_df = pd.concat(all_hotspots_df, ignore_index=True)
     logger.info(f"Fetched {len(combined_df)} total records from NASA FIRMS.")
+    combined_df = combined_df.fillna(0)
     
     # Process and insert to database
     with SyncSessionLocal() as db:

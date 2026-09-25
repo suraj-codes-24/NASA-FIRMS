@@ -45,6 +45,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: ignis-backend
+    command: bash -c "python seed_db.py && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     env_file:
       - .env
     ports:
@@ -108,6 +109,8 @@ services:
     environment:
       - VITE_API_URL=http://localhost/api
       - VITE_WS_URL=ws://localhost/ws
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
     restart: unless-stopped
 
   # ----- Nginx Reverse Proxy -----

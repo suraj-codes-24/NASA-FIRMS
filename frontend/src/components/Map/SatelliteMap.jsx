@@ -1,32 +1,52 @@
 import React, { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Circle } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { Flame } from 'lucide-react';
 import { fetchHotspots } from '../../api';
+import MarkerClusterGroup from './MarkerClusterGroup';
+import { useSettings } from '../../contexts/SettingsContext';
+import HeatmapLayer from './HeatmapLayer';
 
-// Custom icon using lucide-react (rendered to string/SVG)
-const createCustomIcon = (color) => {
+// Create a glowing, pulsing orb icon based on classification
+const createCustomIcon = (color, isIndustrial) => {
+  const pulseClass = isIndustrial ? 'pulse-ring' : '';
+  const shadowSpread = isIndustrial ? '12px' : '6px';
+  
   return L.divIcon({
     className: 'custom-icon',
-    html: `<div style="background-color: ${color}; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 0 10px ${color};">
-             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
-           </div>`,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12]
+    html: `
+      <div style="position: relative; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center;">
+        <div class="${pulseClass}" style="position: absolute; width: 100%; height: 100%; border: 2px solid ${color}; border-radius: 50%;"></div>
+        <div style="background-color: ${color}; width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 ${shadowSpread} ${color};"></div>
+      </div>
+    `,
+    iconSize: [16, 16],
+    iconAnchor: [8, 8]
   });
 };
 
-const SatelliteMap = () => {
-  const [position, setPosition] = useState([22.3, 73.1]); // Example coords (IOCL Refinery, Gujarat)
+const SatelliteMap = ({ activeFilters, onFilterChange, selectedHotspot, onSelectHotspot }) => {
+  const [position, setPosition] = useState([22.3, 73.1]); // Example coords
   const [hotspots, setHotspots] = useState([]);
+  const { settings } = useSettings();
+
+  const useClustering = settings?.settings_map_cluster !== 'false';
+  const showBuffers = settings?.settings_map_buffers !== 'false';
+  const showHeatmap = settings?.settings_map_heatmap === 'true';
 
   useEffect(() => {
     const loadData = async () => {
-      const data = await fetchHotspots();
-      setHotspots(data);
-      if (data.length > 0) {
-        setPosition([data[0].latitude, data[0].longitude]);
+      try {
+        const data = await fetchHotspots();
+        setHotspots(data);
+        if (data.length > 0) {
+          // Find first industrial fire to center on, else first hotspot
+          const industrial = data.find(h => h.ml_label === 'Industrial Fire');
+          const centerFire = industrial || data[0];
+          setPosition([centerFire.latitude, centerFire.longitude]);
+        }
+      } catch (e) {
+        console.error("Failed to load hotspots", e);
       }
     };
     loadData();
@@ -36,65 +56,154 @@ const SatelliteMap = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Helper to determine marker color
   const getColorForLabel = (label) => {
-    if (label === 'INDUSTRIAL_FIRE') return '#ff4757'; // Red
-    if (label === 'FOREST_FIRE') return '#ffa502'; // Orange
-    if (label === 'GAS_FLARE') return '#eccc68'; // Yellow
-    if (label === 'AGRICULTURAL') return '#2ed573'; // Green
-    return '#a4b0be'; // Unknown
+    if (label === 'Industrial Fire' || label === 'INDUSTRIAL_FIRE') return '#ef4444'; // Neon Red/Pink
+    if (label === 'Forest Fire' || label === 'FOREST_FIRE') return '#f97316'; // Orange
+    if (label === 'Gas Flare' || label === 'GAS_FLARE') return '#eab308'; // Yellow
+    if (label === 'Agricultural Burn' || label === 'AGRICULTURAL_BURN') return '#10b981'; // Cyan
+    if (label === 'Mining Activity' || label === 'Mining/Thermal' || label === 'MINING_THERMAL') return '#3b82f6'; // Purple
+    return '#9ca3af'; // Unknown
+  };
+
+  const visibleHotspots = hotspots.filter(h => 
+    activeFilters.length === 0 || activeFilters.includes(h.ml_label)
+  );
+
+  const handleFilterClick = (label) => {
+    if (activeFilters.includes(label)) {
+      onFilterChange(activeFilters.filter(f => f !== label));
+    } else {
+      onFilterChange([...activeFilters, label]);
+    }
+    onSelectHotspot(null);
   };
 
   return (
-    <div style={{ height: '100%', width: '100%', position: 'absolute', top: 0, left: 0, zIndex: 1 }}>
-      <MapContainer center={position} zoom={15} style={{ height: '100%', width: '100%' }} zoomControl={false}>
+    <div style={{ height: '100%', width: '100%', position: 'absolute', top: 0, left: 0, zIndex: 1, backgroundColor: '#050810' }}>
+      {/* Tactical Grid Overlay */}
+      <div style={{
+        position: 'absolute',
+        top: 0, left: 0, right: 0, bottom: 0,
+        pointerEvents: 'none',
+        backgroundImage: 'linear-gradient(var(--border-color) 1px, transparent 1px), linear-gradient(90deg, var(--border-color) 1px, transparent 1px)',
+        backgroundSize: '100px 100px',
+        opacity: 0.15,
+        zIndex: 500
+      }} />
+      <MapContainer center={position} zoom={13} style={{ height: '100%', width: '100%' }} zoomControl={false}>
+        
         {/* ESRI World Imagery for Satellite View */}
         <TileLayer
           url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
           attribution="Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community"
         />
+        {/* Reference Labels (Places, Borders) */}
+        <TileLayer
+          url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
+        />
         
         {/* Facility Marker (Blue) */}
         <Marker position={[22.3, 73.1]} icon={L.divIcon({
             className: 'facility-icon',
-            html: `<div style="background-color: #1e90ff; width: 16px; height: 16px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 8px #1e90ff;"></div>`,
-            iconSize: [16, 16],
-            iconAnchor: [8, 8]
-        })}>
-          <Popup>IOCL Refinery</Popup>
-        </Marker>
+            html: `<div style="background-color: #00a8ff; width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 10px #00a8ff;"></div>`,
+            iconSize: [14, 14],
+            iconAnchor: [7, 7]
+        })} />
+        {showBuffers && (
+          <Circle center={[22.3, 73.1]} radius={2000} pathOptions={{ color: '#00a8ff', fillColor: '#00a8ff', fillOpacity: 0.1, weight: 1, dashArray: '5,5' }} />
+        )}
         
-        {/* Buffer Circle */}
-        <Circle center={[22.3, 73.1]} radius={500} pathOptions={{ color: '#ffffff', weight: 1, fillOpacity: 0.1, dashArray: '5, 5' }} />
-        <Circle center={[22.3, 73.1]} radius={200} pathOptions={{ color: '#ff4757', weight: 1, fillColor: '#ff4757', fillOpacity: 0.3 }} />
-
+        {/* Heatmap Layer */}
+        {showHeatmap && <HeatmapLayer points={visibleHotspots} />}
+        
         {/* Dynamic Hotspots */}
-        {hotspots.map((h, i) => (
-          <Marker key={i} position={[h.latitude, h.longitude]} icon={createCustomIcon(getColorForLabel(h.ml_label))}>
-            <Popup>
-              <strong>{h.ml_label || 'UNCLASSIFIED'}</strong><br/>
-              FRP: {h.frp} MW<br/>
-              Confidence: {h.confidence}%<br/>
-              Persistence: {h.persistence_hours || 0} hrs
-            </Popup>
-          </Marker>
-        ))}
+        {useClustering ? (
+          <MarkerClusterGroup
+            chunkedLoading
+            maxClusterRadius={20}
+            iconCreateFunction={(cluster) => {
+              return L.divIcon({
+                html: `<div class="cluster-marker">${cluster.getChildCount()}</div>`,
+                className: 'custom-cluster-icon',
+                iconSize: L.point(40, 40, true),
+              });
+            }}
+          >
+            {visibleHotspots.map((h, i) => (
+              <Marker 
+                key={i} 
+                position={[h.latitude, h.longitude]} 
+                icon={createCustomIcon(getColorForLabel(h.ml_label), h.ml_label === 'Industrial Fire')}
+                zIndexOffset={selectedHotspot && selectedHotspot.id === h.id ? 1000 : 0}
+                eventHandlers={{
+                  click: () => onSelectHotspot(h),
+                }}
+              />
+            ))}
+          </MarkerClusterGroup>
+        ) : (
+          <React.Fragment>
+            {visibleHotspots.map((h, i) => (
+              <Marker 
+                key={i} 
+                position={[h.latitude, h.longitude]} 
+                icon={createCustomIcon(getColorForLabel(h.ml_label), h.ml_label === 'Industrial Fire')}
+                zIndexOffset={selectedHotspot && selectedHotspot.id === h.id ? 1000 : 0}
+                eventHandlers={{
+                  click: () => onSelectHotspot(h),
+                }}
+              />
+            ))}
+          </React.Fragment>
+        )}
         
-        
-        {/* Custom Legend */}
-        <div style={{ position: 'absolute', bottom: '280px', left: '20px', zIndex: 1000, background: 'var(--bg-card)', backdropFilter: 'blur(10px)', padding: '15px', borderRadius: '8px', border: '1px solid var(--border-color)', color: 'white' }}>
-          <h4 style={{margin: '0 0 10px 0', fontSize: '14px'}}>Legend</h4>
-          <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', fontSize: '12px'}}>
-            <div style={{width:'12px', height:'12px', borderRadius:'50%', backgroundColor:'#ff4757'}}></div> Active Fire
-          </div>
-          <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', fontSize: '12px'}}>
-            <div style={{width:'12px', height:'12px', borderRadius:'50%', backgroundColor:'#ffa502'}}></div> Managed Fire
-          </div>
-          <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', fontSize: '12px'}}>
-            <div style={{width:'12px', height:'12px', borderRadius:'50%', backgroundColor:'#1e90ff'}}></div> Facility
-          </div>
-          <div style={{display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px'}}>
-            <div style={{width:'10px', height:'10px', borderRadius:'50%', border:'1px solid white'}}></div> Buffer
+        {/* Sleek Custom Legend / Filter */}
+        <div className="glass-panel" style={{ 
+          position: 'absolute', bottom: '40px', left: '20px', zIndex: 1000, padding: '16px', 
+          color: 'var(--text-primary)', minWidth: '180px', backgroundColor: 'var(--bg-card)', 
+          borderRadius: '12px', border: '1px solid var(--border-color)', 
+          boxShadow: '0 8px 32px rgba(0,0,0,0.5)' 
+        }}>
+          <h4 style={{margin: '0 0 12px 0', fontSize: '13px', fontWeight: '600', letterSpacing: '1px', color: 'var(--text-secondary)'}}>
+            MAP LAYERS
+          </h4>
+          
+          {[
+            { label: 'Industrial Fire', color: '#ef4444', shadow: '0 0 8px #ef4444' },
+            { label: 'Gas Flare', color: '#eab308', shadow: '0 0 6px #eab308' },
+            { label: 'Forest Fire', color: '#f97316', shadow: 'none' },
+            { label: 'Agricultural Burn', color: '#10b981', shadow: 'none' },
+            { label: 'Mining Activity', color: '#3b82f6', shadow: 'none' },
+            { label: 'Unclassified', color: '#9ca3af', shadow: 'none' }
+          ].map((item) => {
+            const isActive = activeFilters.length === 0 || activeFilters.includes(item.label);
+            return (
+              <div 
+                key={item.label}
+                onClick={() => handleFilterClick(item.label)}
+                style={{
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '12px', 
+                  marginBottom: '10px', 
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                  opacity: isActive ? 1 : 0.3,
+                  transition: 'opacity 0.2s ease'
+                }}
+              >
+                <div style={{
+                  width:'10px', height:'10px', borderRadius:'50%', 
+                  backgroundColor: item.color, 
+                  boxShadow: isActive ? item.shadow : 'none'
+                }}></div> 
+                {item.label}
+              </div>
+            );
+          })}
+          
+          <div style={{display: 'flex', alignItems: 'center', gap: '12px', fontSize: '12px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '10px', marginTop: '4px', opacity: activeFilters.length === 0 ? 1 : 0.3}}>
+            <div style={{width:'10px', height:'10px', borderRadius:'2px', backgroundColor:'#00a8ff', border: '1px solid rgba(255,255,255,0.3)'}}></div> Known Facility
           </div>
         </div>
       </MapContainer>

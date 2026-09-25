@@ -6,9 +6,9 @@ const classColors = {
   'Industrial Fire': '#ef4444',
   'Forest Fire': '#f97316',
   'Gas Flare': '#eab308',
-  'Agricultural Burn': '#22c55e',
+  'Agricultural Burn': '#10b981',
   'Mining/Thermal': '#3b82f6',
-  'Unclassified': '#6b7280',
+  'Unclassified': '#9ca3af',
 };
 
 /**

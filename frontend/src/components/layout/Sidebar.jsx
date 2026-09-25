@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
   Grid, 
@@ -8,55 +8,60 @@ import {
   Settings, 
   LogOut,
   HelpCircle,
-  Menu
+  Flame
 } from 'lucide-react';
 
 const Sidebar = () => {
-  const [expanded, setExpanded] = useState(false);
-
-  const toggleSidebar = () => setExpanded(!expanded);
-
   return (
-    <nav className={`app-sidebar ${expanded ? 'expanded' : ''}`}>
-      <div className="nav-item" onClick={toggleSidebar} style={{cursor: 'pointer', marginBottom: '2rem'}}>
-        <Menu size={20} />
-      </div>
+    <nav className="app-sidebar">
+      <a href="/" style={{ textDecoration: 'none' }}>
+        <div className="sidebar-logo" style={{ cursor: 'pointer' }}>
+          <div style={{width: '28px', height: '28px', background: 'linear-gradient(90deg, #9b51e0 0%, #3b82f6 100%)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+            <Flame size={16} color="white" />
+          </div>
+          <span>IGNIS</span>
+        </div>
+      </a>
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', width: '100%', alignItems: expanded ? 'flex-start' : 'center' }}>
-        <NavLink to="/" className={({isActive}) => `nav-item ${isActive ? 'active' : ''}`} title="Map Dashboard">
-          <Grid size={20} />
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', width: '100%' }}>
+        
+        <div className="sidebar-section">Surveillance</div>
+        <NavLink to="/" className={({isActive}) => `nav-item ${isActive ? 'active' : ''}`}>
+          <Grid size={18} />
           <span className="nav-label">Map Dashboard</span>
         </NavLink>
         
-        <NavLink to="/analytics" className={({isActive}) => `nav-item ${isActive ? 'active' : ''}`} title="Analytics">
-          <BarChart2 size={20} />
+        <NavLink to="/alerts" className={({isActive}) => `nav-item ${isActive ? 'active' : ''}`}>
+          <MapIcon size={18} />
+          <span className="nav-label">Live Alerts</span>
+        </NavLink>
+
+        <div className="sidebar-section">Intelligence</div>
+        <NavLink to="/analytics" className={({isActive}) => `nav-item ${isActive ? 'active' : ''}`}>
+          <BarChart2 size={18} />
           <span className="nav-label">Analytics</span>
         </NavLink>
 
-        <NavLink to="/alerts" className={({isActive}) => `nav-item ${isActive ? 'active' : ''}`} title="Alerts">
-          <MapIcon size={20} />
-          <span className="nav-label">Alerts</span>
-        </NavLink>
-
-        <NavLink to="/reports" className={({isActive}) => `nav-item ${isActive ? 'active' : ''}`} title="Reports">
-          <FileText size={20} />
+        <NavLink to="/reports" className={({isActive}) => `nav-item ${isActive ? 'active' : ''}`}>
+          <FileText size={18} />
           <span className="nav-label">Reports</span>
         </NavLink>
 
-        <NavLink to="/settings" className={({isActive}) => `nav-item ${isActive ? 'active' : ''}`} title="Settings">
-          <Settings size={20} />
+        <div className="sidebar-section">System</div>
+        <NavLink to="/settings" className={({isActive}) => `nav-item ${isActive ? 'active' : ''}`}>
+          <Settings size={18} />
           <span className="nav-label">Settings</span>
         </NavLink>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', width: '100%', alignItems: expanded ? 'flex-start' : 'center' }}>
-        <a href="#" className="nav-item" title="Help">
-          <HelpCircle size={20} />
-          <span className="nav-label">Help</span>
+      <div style={{ width: '100%', padding: '1rem 0' }}>
+        <a href="#" className="nav-item">
+          <HelpCircle size={18} />
+          <span className="nav-label">Help & Support</span>
         </a>
-        <a href="#" className="nav-item" title="Logout">
-          <LogOut size={20} />
-          <span className="nav-label">Logout</span>
+        <a href="#" className="nav-item" style={{ marginTop: '0.25rem' }}>
+          <LogOut size={18} />
+          <span className="nav-label">Log Out</span>
         </a>
       </div>
     </nav>

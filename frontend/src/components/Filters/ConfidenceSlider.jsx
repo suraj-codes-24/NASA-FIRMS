@@ -24,7 +24,7 @@ const ConfidenceSlider = ({ value = 0, onChange }) => (
         textAlign: 'right',
         fontSize: '12px',
         fontWeight: 600,
-        color: value >= 70 ? '#2ecc71' : value >= 40 ? '#f1c40f' : '#e74c3c',
+        color: value >= 70 ? '#2ecc71' : value >= 40 ? '#eab308' : '#e74c3c',
       }}>
         {value}%
       </span>

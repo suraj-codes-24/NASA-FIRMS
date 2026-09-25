@@ -56,8 +56,8 @@ const BottomCharts = () => {
       {
         label: 'Industrial Fire',
         data: [0.1, 150, 15, 0.5],
-        borderColor: '#ff4757',
-        backgroundColor: '#ff4757',
+        borderColor: '#ef4444',
+        backgroundColor: '#ef4444',
         tension: 0.4,
         pointRadius: 0
       },
@@ -95,7 +95,7 @@ const BottomCharts = () => {
       {
         label: 'Industrial Fire',
         data: Array.from({length: 30}, () => Math.floor(Math.random() * 40)),
-        backgroundColor: '#ff4757'
+        backgroundColor: '#ef4444'
       },
       {
         label: 'Vegetation Fire',
@@ -122,7 +122,7 @@ const BottomCharts = () => {
     datasets: [
       {
         data: [45, 32, 12, 11],
-        backgroundColor: ['#ff4757', '#ffa502', '#eccc68', '#718096'],
+        backgroundColor: ['#ef4444', '#ffa502', '#eccc68', '#718096'],
         borderWidth: 0,
         hoverOffset: 4
       }
@@ -180,7 +180,7 @@ const BottomCharts = () => {
         </div>
         {/* Custom Legend */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', fontSize: '11px', color: 'var(--text-secondary)', marginTop: '10px', justifyContent: 'center' }}>
-           <div style={{display:'flex', alignItems:'center', gap:'4px'}}><div style={{width:'8px',height:'8px',borderRadius:'50%',backgroundColor:'#ff4757'}}></div>Industrial Fire</div>
+           <div style={{display:'flex', alignItems:'center', gap:'4px'}}><div style={{width:'8px',height:'8px',borderRadius:'50%',backgroundColor:'#ef4444'}}></div>Industrial Fire</div>
            <div style={{display:'flex', alignItems:'center', gap:'4px'}}><div style={{width:'8px',height:'8px',borderRadius:'50%',backgroundColor:'#ffa502'}}></div>Vegetation Fire</div>
            <div style={{display:'flex', alignItems:'center', gap:'4px'}}><div style={{width:'8px',height:'8px',borderRadius:'50%',backgroundColor:'#eccc68'}}></div>Managed Agricultural</div>
            <div style={{display:'flex', alignItems:'center', gap:'4px'}}><div style={{width:'8px',height:'8px',borderRadius:'50%',backgroundColor:'#718096'}}></div>Non-Fire Event</div>

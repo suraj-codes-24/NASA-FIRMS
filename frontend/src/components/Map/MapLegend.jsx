@@ -4,10 +4,10 @@ const LEGEND_ITEMS = [
   { label: 'Industrial Fire', color: '#ef4444' },
   { label: 'Forest / Wildfire', color: '#f97316' },
   { label: 'Gas Flare', color: '#eab308' },
-  { label: 'Agricultural Burn', color: '#22c55e' },
+  { label: 'Agricultural Burn', color: '#10b981' },
   { label: 'Mining / Thermal', color: '#3b82f6' },
-  { label: 'Unclassified', color: '#6b7280' },
-  { label: 'Industrial Facility', color: '#8b5cf6', shape: 'square' },
+  { label: 'Unclassified', color: '#9ca3af' },
+  { label: 'Industrial Facility', color: '#3b82f6', shape: 'square' },
 ];
 
 /**
