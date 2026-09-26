@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Search, Bell, User } from 'lucide-react';
+import { fetchReportSummary } from '../../api';
 
 const Header = () => {
   const location = useLocation();
@@ -18,6 +19,26 @@ const Header = () => {
 
   // Formatting role
   const roleDisplay = user.role === 'admin' ? 'System Administrator' : 'Analyst';
+
+  // Fetch unread alerts count
+  const [openAlerts, setOpenAlerts] = useState(0);
+
+  useEffect(() => {
+    const getAlerts = async () => {
+      try {
+        const summary = await fetchReportSummary();
+        if (summary && summary.open_alerts !== undefined) {
+          setOpenAlerts(summary.open_alerts);
+        }
+      } catch (err) {
+        // silently fail
+      }
+    };
+    getAlerts();
+    // In a real app, this would be updated via the WebSocket or polled.
+    const interval = setInterval(getAlerts, 30000); // Check every 30s
+    return () => clearInterval(interval);
+  }, []);
 
   const getPageTitle = () => {
     if (location.pathname === '/') return 'Map Dashboard';
@@ -46,7 +67,9 @@ const Header = () => {
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
         <button style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.03)'}>
           <Bell size={16} />
-          <div style={{ position: 'absolute', top: '8px', right: '8px', width: '6px', height: '6px', backgroundColor: '#ef4444', borderRadius: '50%', boxShadow: '0 0 5px rgba(239, 68, 68, 0.8)' }}></div>
+          {openAlerts > 0 && (
+            <div style={{ position: 'absolute', top: '8px', right: '8px', width: '6px', height: '6px', backgroundColor: '#ef4444', borderRadius: '50%', boxShadow: '0 0 5px rgba(239, 68, 68, 0.8)' }}></div>
+          )}
         </button>
         
         <div className="user-widget" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginLeft: '8px', padding: '6px 12px', borderRadius: '24px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.02)'}>
