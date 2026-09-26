@@ -1,21 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Search, Bell, User } from 'lucide-react';
-import { fetchReportSummary } from '../../api';
+import { fetchReportSummary, fetchCurrentUser } from '../../api';
 
 const Header = () => {
   const location = useLocation();
 
-  // Fetch user from local storage
-  let user = { full_name: 'Admin Analyst', role: 'NTRO Security' }; // defaults
-  try {
-    const storedUser = localStorage.getItem('ignis_user');
-    if (storedUser) {
-      user = JSON.parse(storedUser);
+  // Fetch user state
+  const [user, setUser] = useState({ full_name: 'Admin Analyst', role: 'NTRO Security' });
+  const [openAlerts, setOpenAlerts] = useState(0);
+
+  useEffect(() => {
+    // Try to load from localStorage first for immediate render
+    try {
+      const storedUser = localStorage.getItem('ignis_user');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+    } catch (e) {
+      console.error(e);
     }
-  } catch (e) {
-    console.error("Failed to parse user", e);
-  }
+
+    // Fetch the real user from backend to ensure accuracy
+    const getUser = async () => {
+      try {
+        const userData = await fetchCurrentUser();
+        if (userData) {
+          setUser(userData);
+          localStorage.setItem('ignis_user', JSON.stringify(userData)); // update local storage
+        }
+      } catch (err) {
+        console.error("Failed to fetch user", err);
+      }
+    };
+    getUser();
+  }, []);
 
   // Formatting role
   const roleDisplay = user.role === 'admin' ? 'System Administrator' : 'Analyst';
