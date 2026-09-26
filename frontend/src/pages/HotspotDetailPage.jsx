@@ -93,8 +93,8 @@ export default function HotspotDetailPage() {
           </div>
           <div style={{ height: '400px', width: '100%', position: 'relative' }}>
             <MapContainer center={[lat, lng]} zoom={14} style={{ height: '100%', width: '100%' }} zoomControl={false} attributionControl={false}>
-              <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
-              <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}" />
+              <TileLayer url="https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}" />
+              <TileLayer url="https://mt1.google.com/vt/lyrs=h&x={x}&y={y}&z={z}&hl=en" />
               <Marker position={[lat, lng]} icon={redIcon} />
             </MapContainer>
             

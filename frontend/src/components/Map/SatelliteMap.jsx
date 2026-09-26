@@ -92,14 +92,14 @@ const SatelliteMap = ({ activeFilters, onFilterChange, selectedHotspot, onSelect
       }} />
       <MapContainer center={position} zoom={13} style={{ height: '100%', width: '100%' }} zoomControl={false} scrollWheelZoom={true}>
         
-        {/* ESRI World Imagery for Satellite View */}
+        {/* Google Satellite View */}
         <TileLayer
-          url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-          attribution="Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community"
+          url="https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
+          attribution="&copy; Google Maps"
         />
-        {/* Reference Labels (Places, Borders) */}
+        {/* Google Labels (English) */}
         <TileLayer
-          url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
+          url="https://mt1.google.com/vt/lyrs=h&x={x}&y={y}&z={z}&hl=en"
         />
         
         {/* Facility Marker (Blue) */}
