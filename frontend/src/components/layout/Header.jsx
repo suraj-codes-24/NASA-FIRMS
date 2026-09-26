@@ -40,7 +40,6 @@ const Header = () => {
   const roleDisplay = user.role === 'admin' ? 'System Administrator' : 'Analyst';
 
   // Fetch unread alerts count
-  const [openAlerts, setOpenAlerts] = useState(0);
 
   useEffect(() => {
     const getAlerts = async () => {
