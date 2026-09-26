@@ -55,9 +55,10 @@
 }
 
 .nav-item.active {
-  background: linear-gradient(90deg, #9b51e0 0%, #b13bff 100%);
-  color: #ffffff;
-  box-shadow: 0 4px 15px rgba(155, 81, 224, 0.4);
+  background: linear-gradient(90deg, rgba(0, 168, 255, 0.15) 0%, transparent 100%);
+  color: #00a8ff;
+  border-left: 3px solid #00a8ff;
+  box-shadow: inset 20px 0 20px -20px rgba(0, 168, 255, 0.4);
 }
 
 .nav-label {

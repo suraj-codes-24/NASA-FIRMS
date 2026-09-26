@@ -16,7 +16,7 @@ const Sidebar = () => {
     <nav className="app-sidebar">
       <a href="/" style={{ textDecoration: 'none' }}>
         <div className="sidebar-logo" style={{ cursor: 'pointer' }}>
-          <div style={{width: '28px', height: '28px', background: 'linear-gradient(90deg, #9b51e0 0%, #3b82f6 100%)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+          <div style={{width: '28px', height: '28px', background: 'linear-gradient(135deg, #00a8ff 0%, #3b82f6 100%)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 15px rgba(0,168,255,0.4)'}}>
             <Flame size={16} color="white" />
           </div>
           <span>IGNIS</span>
