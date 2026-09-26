@@ -78,9 +78,10 @@ backend/app/ml/models/*.onnx
 # ----- Docker -----
 docker-compose.override.yml
 
-# ----- Logs -----
+# ----- Logs & Background Tasks -----
 logs/
 *.log
+celerybeat-schedule*
 
 # ----- PostgreSQL data -----
 pgdata/
