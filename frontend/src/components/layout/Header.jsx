@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Search, Bell, User } from 'lucide-react';
 import { fetchReportSummary, fetchCurrentUser } from '../../api';
 
 const Header = () => {
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Fetch user state
   const [user, setUser] = useState({ full_name: 'Admin Analyst', role: 'NTRO Security' });
@@ -83,14 +84,25 @@ const Header = () => {
 
       {/* Right Icons & User */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-        <button style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.03)'}>
+        <button 
+          onClick={() => navigate('/alerts')}
+          style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }} 
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)'} 
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.03)'}
+        >
           <Bell size={16} />
           {openAlerts > 0 && (
             <div style={{ position: 'absolute', top: '8px', right: '8px', width: '6px', height: '6px', backgroundColor: '#ef4444', borderRadius: '50%', boxShadow: '0 0 5px rgba(239, 68, 68, 0.8)' }}></div>
           )}
         </button>
         
-        <div className="user-widget" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginLeft: '8px', padding: '6px 12px', borderRadius: '24px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.02)'}>
+        <div 
+          onClick={() => navigate('/settings')}
+          className="user-widget" 
+          style={{ display: 'flex', alignItems: 'center', gap: '12px', marginLeft: '8px', padding: '6px 12px', borderRadius: '24px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer', transition: 'background 0.2s' }} 
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'} 
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.02)'}
+        >
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
             <span style={{ fontSize: '13px', fontWeight: 600, color: 'white', display: 'flex', alignItems: 'center' }}>
               {user?.full_name || 'Loading...'}
