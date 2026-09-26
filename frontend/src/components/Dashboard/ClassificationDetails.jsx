@@ -26,7 +26,7 @@ const ClassificationDetails = ({ hotspot, onClose }) => {
     const fetchAddress = async () => {
       setAddress('Fetching location...');
       try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${hotspot.latitude}&lon=${hotspot.longitude}`);
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${hotspot.latitude}&lon=${hotspot.longitude}&accept-language=en`);
         const data = await res.json();
         
         if (isMounted) {
