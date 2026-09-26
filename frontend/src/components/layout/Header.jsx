@@ -37,7 +37,7 @@ const Header = () => {
   }, []);
 
   // Formatting role
-  const roleDisplay = user.role === 'admin' ? 'System Administrator' : 'Analyst';
+  const roleDisplay = user?.role === 'admin' ? 'System Administrator' : (user?.role || 'Analyst');
 
   // Fetch unread alerts count
 
@@ -93,7 +93,7 @@ const Header = () => {
         <div className="user-widget" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginLeft: '8px', padding: '6px 12px', borderRadius: '24px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.02)'}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
             <span style={{ fontSize: '13px', fontWeight: 600, color: 'white', display: 'flex', alignItems: 'center' }}>
-              {user.full_name}
+              {user?.full_name || 'Loading...'}
             </span>
             <span style={{ fontSize: '11px', color: 'var(--text-secondary)', letterSpacing: '0.3px', marginTop: '2px', textTransform: 'capitalize' }}>{roleDisplay}</span>
           </div>
