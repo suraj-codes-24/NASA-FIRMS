@@ -78,7 +78,11 @@ const FilterPanel = ({ filters, setFilters }) => {
       {/* Region */}
       <div>
         <h4 style={{ fontSize: '13px', color: '#fff', fontWeight: 500, letterSpacing: '0.5px', marginBottom: '12px' }}>Geographic Region</h4>
-        <select style={{ 
+        <select 
+          name="region"
+          value={filters.region || 'global'}
+          onChange={handleChange}
+          style={{ 
           width: '100%', 
           padding: '10px 12px', 
           backgroundColor: 'rgba(255,255,255,0.05)',
@@ -94,12 +98,12 @@ const FilterPanel = ({ filters, setFilters }) => {
         onFocus={(e) => e.target.style.borderColor = '#00a8ff'}
         onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
         >
-          <option style={{background: '#15171e'}}>Global View</option>
-          <option style={{background: '#15171e'}}>North America (NORAD)</option>
-          <option style={{background: '#15171e'}}>Europe & Middle East</option>
-          <option style={{background: '#15171e'}}>Asia Pacific (INDOPACOM)</option>
-          <option style={{background: '#15171e'}}>South America</option>
-          <option style={{background: '#15171e'}}>Africa Command (AFRICOM)</option>
+          <option value="global" style={{background: '#15171e'}}>Global View</option>
+          <option value="north_america" style={{background: '#15171e'}}>North America (NORAD)</option>
+          <option value="europe" style={{background: '#15171e'}}>Europe & Middle East</option>
+          <option value="asia" style={{background: '#15171e'}}>Asia Pacific (INDOPACOM)</option>
+          <option value="south_america" style={{background: '#15171e'}}>South America</option>
+          <option value="africa" style={{background: '#15171e'}}>Africa Command (AFRICOM)</option>
         </select>
       </div>
 

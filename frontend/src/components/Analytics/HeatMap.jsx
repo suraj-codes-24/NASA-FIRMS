@@ -1,8 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
-import { MapContainer, TileLayer, CircleMarker } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { fetchHotspots } from '../../api';
+
+const regions = {
+  global: { center: [20.0, 0.0], zoom: 2, bbox: null },
+  north_america: { center: [45.0, -100.0], zoom: 3, bbox: "-170.0,15.0,-50.0,75.0" },
+  europe: { center: [50.0, 15.0], zoom: 4, bbox: "-10.0,30.0,60.0,70.0" },
+  asia: { center: [20.0, 100.0], zoom: 3, bbox: "60.0,-10.0,150.0,50.0" },
+  south_america: { center: [-15.0, -60.0], zoom: 3, bbox: "-90.0,-60.0,-30.0,15.0" },
+  africa: { center: [0.0, 20.0], zoom: 3, bbox: "-20.0,-35.0,55.0,38.0" }
+};
+
+const MapUpdater = ({ region }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (region && regions[region]) {
+      const { center, zoom } = regions[region];
+      map.flyTo(center, zoom, { duration: 1.5 });
+    }
+  }, [region, map]);
+  return null;
+};
 
 const HeatMap = ({ filters }) => {
   const [position] = useState([22.0, 79.0]); // Center of India
@@ -19,6 +39,9 @@ const HeatMap = ({ filters }) => {
         if (filters?.ml_label) activeFilters.ml_label = filters.ml_label;
         if (filters?.min_confidence > 0) activeFilters.confidence_min = (filters.min_confidence / 100); // Hotspots API uses 0-1 or 0-100? Assuming 0-100 based on the slider which goes to 100. Actually, let's just pass it as is.
         if (filters?.min_confidence > 0) activeFilters.confidence_min = filters.min_confidence;
+        if (filters?.region && filters.region !== 'global' && regions[filters.region]) {
+          activeFilters.bbox = regions[filters.region].bbox;
+        }
 
         const data = await fetchHotspots(1000, activeFilters); // Fetch up to 1000 points
         setHotspots(data);
@@ -49,8 +72,9 @@ const HeatMap = ({ filters }) => {
         zoom={5} 
         style={{ height: '100%', width: '100%', backgroundColor: '#0a0b10' }} 
         zoomControl={true}
-        scrollWheelZoom={false}
+        scrollWheelZoom={true}
       >
+        <MapUpdater region={filters?.region} />
         <TileLayer
           url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
           attribution="Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ"
