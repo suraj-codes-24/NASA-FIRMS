@@ -44,8 +44,26 @@ const AlertsTable = ({ alerts = [], selectedAlert, onSelectAlert }) => {
   const formatLocation = (hotspot) => {
     if (!hotspot || !hotspot.nearest_facility) return 'Remote Location';
     const f = hotspot.nearest_facility;
-    const locationPart = f.state || f.district || f.name;
-    return locationPart ? `${locationPart}, India` : 'India';
+    
+    // Check if string is predominantly English/ASCII
+    const isEnglish = (str) => {
+      if (!str) return false;
+      const stripped = str.replace(/\s+/g, '');
+      if (stripped.length === 0) return false;
+      const nonAsciiCount = (stripped.match(/[^\x00-\x7F]/g) || []).length;
+      return (nonAsciiCount / stripped.length) < 0.5;
+    };
+
+    let locationPart = 'Industrial Facility';
+    if (f.name && isEnglish(f.name)) {
+      locationPart = f.name;
+    } else if (f.district && isEnglish(f.district)) {
+      locationPart = f.district;
+    } else if (f.state && isEnglish(f.state)) {
+      locationPart = f.state;
+    }
+    
+    return `${locationPart}, India`;
   };
 
   return (
