@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import SupportModal from './SupportModal';
 import { 
   Grid, 
   Map as MapIcon, 
@@ -13,6 +14,7 @@ import {
 
 const Sidebar = () => {
   const navigate = useNavigate();
+  const [showSupport, setShowSupport] = useState(false);
   
   const handleLogout = (e) => {
     e.preventDefault();
@@ -63,7 +65,7 @@ const Sidebar = () => {
       </div>
 
       <div style={{ width: '100%', padding: '1rem 0' }}>
-        <a href="#" className="nav-item">
+        <a href="#" onClick={(e) => { e.preventDefault(); setShowSupport(true); }} className="nav-item">
           <HelpCircle size={18} />
           <span className="nav-label">Help & Support</span>
         </a>
@@ -72,6 +74,8 @@ const Sidebar = () => {
           <span className="nav-label">Log Out</span>
         </a>
       </div>
+
+      <SupportModal isOpen={showSupport} onClose={() => setShowSupport(false)} />
     </nav>
   );
 };
