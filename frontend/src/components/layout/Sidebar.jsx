@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { 
   Grid, 
   Map as MapIcon, 
@@ -12,6 +12,14 @@ import {
 } from 'lucide-react';
 
 const Sidebar = () => {
+  const navigate = useNavigate();
+  
+  const handleLogout = (e) => {
+    e.preventDefault();
+    localStorage.removeItem('ignis_token');
+    window.location.href = '/';
+  };
+
   return (
     <nav className="app-sidebar">
       <a href="/" style={{ textDecoration: 'none' }}>
@@ -59,7 +67,7 @@ const Sidebar = () => {
           <HelpCircle size={18} />
           <span className="nav-label">Help & Support</span>
         </a>
-        <a href="#" className="nav-item" style={{ marginTop: '0.25rem' }}>
+        <a href="#" onClick={handleLogout} className="nav-item" style={{ marginTop: '0.25rem' }}>
           <LogOut size={18} />
           <span className="nav-label">Log Out</span>
         </a>
