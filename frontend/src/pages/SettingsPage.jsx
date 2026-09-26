@@ -153,10 +153,7 @@ const SettingsPage = () => {
       height: '100%', width: '100%', padding: '32px 40px', display: 'flex', flexDirection: 'column', gap: '24px', overflowY: 'auto'
     }}>
       <div style={{ marginBottom: '16px' }}>
-        <h1 style={{ margin: 0, fontSize: '28px', fontWeight: 700, color: 'white', display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <Settings size={28} /> Settings
-        </h1>
-        <p style={{ margin: '8px 0 0', fontSize: '15px', color: 'var(--text-secondary)' }}>
+        <p style={{ margin: 0, fontSize: '15px', color: 'var(--text-secondary)' }}>
           Configure your IGNIS dashboard preferences, API integrations, and alert tolerances.
         </p>
       </div>

@@ -70,10 +70,7 @@ export default function ReportsPage() {
       
       {/* Header */}
       <div>
-        <h1 style={{ fontSize: '24px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <FileText size={28} color="var(--color-facility)" /> Intelligence Reports
-        </h1>
-        <p style={{ color: 'var(--text-secondary)', marginTop: '8px' }}>
+        <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
           Configure, generate, and export classified hotspot and anomaly data for offline analysis.
         </p>
       </div>
