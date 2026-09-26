@@ -94,6 +94,11 @@ export const login = async (username, password) => {
   return response.data;
 };
 
+export const fetchCurrentUser = async () => {
+  const response = await api.get(`/auth/me`);
+  return response.data;
+};
+
 export const fetchReportSummary = async () => {
   const response = await api.get(`/reports/summary`);
   return response.data;
