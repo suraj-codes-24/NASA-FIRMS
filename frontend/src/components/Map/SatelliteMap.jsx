@@ -90,7 +90,7 @@ const SatelliteMap = ({ activeFilters, onFilterChange, selectedHotspot, onSelect
         opacity: 0.15,
         zIndex: 500
       }} />
-      <MapContainer center={position} zoom={13} style={{ height: '100%', width: '100%' }} zoomControl={false}>
+      <MapContainer center={position} zoom={13} style={{ height: '100%', width: '100%' }} zoomControl={false} scrollWheelZoom={true}>
         
         {/* ESRI World Imagery for Satellite View */}
         <TileLayer
