@@ -171,29 +171,25 @@ async def get_hotspot_history(
     """
     Get historical hotspots at approximately the same location (within ~1km grid).
     """
-    hotspot = await db.get(Hotspot, hotspot_id)
-    if not hotspot:
-        raise HTTPException(status_code=404, detail="Hotspot not found")
-    
-    # Find nearby hotspots within ~0.01 degree (~1km) over the time window
-    query = select(Hotspot).filter(
-        and_(
-            Hotspot.latitude.between(hotspot.latitude - 0.01, hotspot.latitude + 0.01),
-            Hotspot.longitude.between(hotspot.longitude - 0.01, hotspot.longitude + 0.01),
-            Hotspot.acq_date >= func.now() - func.cast(f'{days} days', type_=None.__class__)
-        )
-    ).order_by(Hotspot.acq_date.desc()).limit(200)
-    
-    # Simplified approach: just filter by coordinate proximity
-    query = select(Hotspot).options(joinedload(Hotspot.nearest_facility)).filter(
-        and_(
-            Hotspot.latitude.between(hotspot.latitude - 0.01, hotspot.latitude + 0.01),
-            Hotspot.longitude.between(hotspot.longitude - 0.01, hotspot.longitude + 0.01),
-        )
-    ).order_by(Hotspot.acq_date.desc()).limit(200)
-    
-    result = await db.execute(query)
-    return result.scalars().unique().all()
+    try:
+        hotspot = await db.get(Hotspot, hotspot_id)
+        if not hotspot:
+            raise HTTPException(status_code=404, detail="Hotspot not found")
+        
+        query = select(Hotspot).options(joinedload(Hotspot.nearest_facility)).filter(
+            and_(
+                Hotspot.latitude.between(hotspot.latitude - 0.01, hotspot.latitude + 0.01),
+                Hotspot.longitude.between(hotspot.longitude - 0.01, hotspot.longitude + 0.01),
+            )
+        ).order_by(Hotspot.acq_date.desc()).limit(200)
+        
+        result = await db.execute(query)
+        return result.scalars().unique().all()
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in get_hotspot_history: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Internal error: {e}")
 
 @router.get("/{hotspot_id}/nearest-facilities", response_model=List[FacilityResponse])
 async def get_nearest_facilities(

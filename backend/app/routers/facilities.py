@@ -57,17 +57,23 @@ async def get_facility_hotspots(
     from app.models.spatial import Hotspot
     from app.schemas.spatial import HotspotResponse
     
-    facility = await db.get(Facility, facility_id)
-    if not facility:
-        raise HTTPException(status_code=404, detail="Facility not found")
-    
-    from sqlalchemy.orm import joinedload
-    query = (
-        select(Hotspot)
-        .options(joinedload(Hotspot.nearest_facility))
-        .filter(Hotspot.nearest_facility_id == facility_id)
-        .order_by(Hotspot.acq_date.desc())
-        .limit(200)
-    )
-    result = await db.execute(query)
-    return result.scalars().unique().all()
+    try:
+        facility = await db.get(Facility, facility_id)
+        if not facility:
+            raise HTTPException(status_code=404, detail="Facility not found")
+        
+        from sqlalchemy.orm import joinedload
+        query = (
+            select(Hotspot)
+            .options(joinedload(Hotspot.nearest_facility))
+            .filter(Hotspot.nearest_facility_id == facility_id)
+            .order_by(Hotspot.acq_date.desc())
+            .limit(200)
+        )
+        result = await db.execute(query)
+        return result.scalars().unique().all()
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in get_facility_hotspots: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Internal error: {e}")
