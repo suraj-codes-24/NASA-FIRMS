@@ -156,9 +156,9 @@ def fetch_nasa_firms_data():
     logger.info(f"Inserted {len(new_hotspot_ids)} new unique hotspots into database.")
     
     if new_hotspot_ids:
-        # Trigger the ML pipeline
+        # Trigger the ML pipeline (run synchronously in the background thread for serverless deployment)
         from app.tasks.ml_tasks import process_hotspots_batch
-        process_hotspots_batch.delay(new_hotspot_ids)
-        logger.info(f"Enqueued {len(new_hotspot_ids)} hotspots for ML processing.")
+        process_hotspots_batch(new_hotspot_ids)
+        logger.info(f"Processed {len(new_hotspot_ids)} hotspots for ML.")
         
     return True

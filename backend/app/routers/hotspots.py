@@ -53,17 +53,17 @@ async def ingest_hotspots(
     hotspot_ids = [h.id for h in db_hotspots]
     
     from app.tasks.ml_tasks import process_hotspots_batch
-    process_hotspots_batch.delay(hotspot_ids)
+    background_tasks.add_task(process_hotspots_batch, hotspot_ids)
     
     return {"message": f"Ingested {len(hotspot_ids)} hotspots for processing.", "ids": hotspot_ids}
 
 @router.post("/trigger-ingestion", status_code=202)
-async def trigger_nasa_firms_ingestion():
+async def trigger_nasa_firms_ingestion(background_tasks: BackgroundTasks):
     """
-    Manually trigger the NASA FIRMS data ingestion celery task.
+    Manually trigger the NASA FIRMS data ingestion task in the background.
     """
     from app.tasks.nasa_tasks import fetch_nasa_firms_data
-    fetch_nasa_firms_data.delay()
+    background_tasks.add_task(fetch_nasa_firms_data)
     return {"message": "NASA FIRMS ingestion task triggered in background."}
 
 @router.get("", response_model=List[HotspotResponse])
