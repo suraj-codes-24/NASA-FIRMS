@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query, HTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, defer
 from typing import List, Optional
 import logging
 import traceback
@@ -24,7 +24,7 @@ async def get_facilities(
     """
     Retrieve industrial facilities.
     """
-    query = select(Facility).limit(limit)
+    query = select(Facility).options(defer(Facility.geom)).limit(limit)
     if facility_type:
         query = query.filter(Facility.facility_type == facility_type)
         
@@ -44,7 +44,10 @@ async def get_facility_hotspots(
     try:
         query = (
             select(Hotspot)
-            .options(joinedload(Hotspot.nearest_facility))
+            .options(
+                joinedload(Hotspot.nearest_facility).options(defer(Facility.geom)),
+                defer(Hotspot.geom)
+            )
             .filter(Hotspot.nearest_facility_id == facility_id)
             .order_by(Hotspot.acq_date.desc())
             .limit(200)
@@ -65,7 +68,9 @@ async def get_facility(
     """
     Retrieve a specific industrial facility by ID.
     """
-    facility = await db.get(Facility, facility_id)
+    query = select(Facility).options(defer(Facility.geom)).filter(Facility.id == facility_id)
+    result = await db.execute(query)
+    facility = result.scalar_one_or_none()
     if not facility:
         raise HTTPException(status_code=404, detail="Facility not found")
         
