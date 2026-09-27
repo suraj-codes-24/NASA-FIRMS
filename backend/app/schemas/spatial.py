@@ -43,11 +43,11 @@ class HotspotResponse(BaseModel):
     id: int
     latitude: float
     longitude: float
-    brightness: float
-    bright_t31: float
-    frp: float
-    confidence: float
-    satellite: str
+    brightness: Optional[float] = 0.0
+    bright_t31: Optional[float] = 0.0
+    frp: Optional[float] = 0.0
+    confidence: Optional[float] = 0.0
+    satellite: Optional[str] = "VIIRS"
     instrument: Optional[str] = None
     daynight: Optional[str] = None
     scan: Optional[float] = None
