@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from typing import List
+from typing import List, Optional
+import logging
 
 from app.database import get_db
-from app.models.spatial import Facility
-from app.schemas.spatial import FacilityResponse
-import logging
+from app.models.spatial import Facility, Hotspot
+from app.schemas.spatial import FacilityResponse, HotspotResponse
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +15,7 @@ router = APIRouter(prefix="/facilities", tags=["Facilities"])
 @router.get("", response_model=List[FacilityResponse])
 async def get_facilities(
     limit: int = Query(100, ge=1, le=1000),
-    facility_type: str = Query(None),
+    facility_type: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -42,8 +42,6 @@ async def get_facility(
         
     return facility
 
-from app.schemas.spatial import HotspotResponse
-
 @router.get("/{facility_id}/hotspots", response_model=List[HotspotResponse])
 async def get_facility_hotspots(
     facility_id: int,
@@ -52,27 +50,21 @@ async def get_facility_hotspots(
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Get all hotspots within radius_km of a given facility.
+    Get all hotspots near a given facility.
     """
-    from app.models.spatial import Hotspot
-    from app.schemas.spatial import HotspotResponse
-    
     try:
         facility = await db.get(Facility, facility_id)
         if not facility:
             raise HTTPException(status_code=404, detail="Facility not found")
         
-        from sqlalchemy.orm import joinedload
         query = (
             select(Hotspot)
-            .options(joinedload(Hotspot.nearest_facility))
             .filter(Hotspot.nearest_facility_id == facility_id)
             .order_by(Hotspot.acq_date.desc())
             .limit(200)
         )
         result = await db.execute(query)
-        hotspots = result.scalars().unique().all()
-        return [HotspotResponse.model_validate(h) for h in hotspots]
+        return result.scalars().all()
     except HTTPException:
         raise
     except Exception as e:
