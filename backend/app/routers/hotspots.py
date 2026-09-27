@@ -171,26 +171,22 @@ async def get_hotspot_history(
     """
     Get historical hotspots at approximately the same location (within ~1km grid).
     """
-    try:
-        hotspot = await db.get(Hotspot, hotspot_id)
-        if not hotspot:
-            raise HTTPException(status_code=404, detail="Hotspot not found")
-        
-        from sqlalchemy.orm import selectinload
-        query = select(Hotspot).options(selectinload(Hotspot.nearest_facility)).filter(
-            and_(
-                Hotspot.latitude.between(hotspot.latitude - 0.01, hotspot.latitude + 0.01),
-                Hotspot.longitude.between(hotspot.longitude - 0.01, hotspot.longitude + 0.01),
-            )
-        ).order_by(Hotspot.acq_date.desc()).limit(200)
-        
-        result = await db.execute(query)
-        return result.scalars().all()
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error in get_hotspot_history: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Internal error: {e}")
+    res = await db.execute(select(Hotspot.latitude, Hotspot.longitude).filter(Hotspot.id == hotspot_id))
+    row = res.first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Hotspot not found")
+    
+    lat, lon = row.latitude, row.longitude
+    from sqlalchemy.orm import joinedload
+    query = select(Hotspot).options(joinedload(Hotspot.nearest_facility)).filter(
+        and_(
+            Hotspot.latitude.between(lat - 0.01, lat + 0.01),
+            Hotspot.longitude.between(lon - 0.01, lon + 0.01),
+        )
+    ).order_by(Hotspot.acq_date.desc()).limit(200)
+    
+    result = await db.execute(query)
+    return result.scalars().unique().all()
 
 @router.get("/{hotspot_id}/nearest-facilities", response_model=List[FacilityResponse])
 async def get_nearest_facilities(
