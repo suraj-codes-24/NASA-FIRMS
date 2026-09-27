@@ -66,7 +66,7 @@ const ClassificationDetails = ({ hotspot, onClose }) => {
   return (
     <AnimatePresence>
       <motion.div
-        className="glass-panel"
+        className="glass-panel classification-panel"
         initial={{ x: 400, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         exit={{ x: 400, opacity: 0 }}

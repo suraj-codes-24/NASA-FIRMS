@@ -307,3 +307,80 @@ body.light-mode .glass-panel {
   background-color: #ffffff !important;
   border-color: #cbd5e1 !important;
 }
+
+/* MOBILE RESPONSIVE FIXES */
+@media (max-width: 768px) {
+  .app-layout {
+    flex-direction: column;
+  }
+  
+  .app-sidebar {
+    width: 100%;
+    height: 65px;
+    flex-direction: row;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    padding: 0;
+    border-right: none;
+    border-top: 1px solid var(--border-color);
+    z-index: 1000;
+    justify-content: space-around;
+    align-items: center;
+  }
+  
+  .sidebar-logo, .sidebar-section, .nav-label {
+    display: none !important;
+  }
+  
+  .nav-item {
+    padding: 0;
+    margin: 0;
+    justify-content: center;
+    border-left: none !important;
+    height: 100%;
+    width: 100%;
+    border-radius: 0;
+  }
+  
+  .nav-item.active {
+    border-top: 3px solid #00a8ff;
+    border-left: none;
+    box-shadow: inset 0 20px 20px -20px rgba(0, 168, 255, 0.4);
+    background: linear-gradient(180deg, rgba(0, 168, 255, 0.15) 0%, transparent 100%);
+  }
+  
+  .app-main {
+    padding-bottom: 65px; /* space for bottom bar */
+  }
+  
+  .app-header {
+    padding: 0 1rem;
+  }
+  
+  .header-title {
+    font-size: 1rem;
+  }
+  
+  .header-controls {
+    gap: 0.5rem;
+  }
+  
+  /* Make Analytics dashboard wrap */
+  .analytics-grid, div[style*="display: flex"][style*="minHeight: '400px'"] {
+    flex-wrap: wrap;
+  }
+  
+  /* Fix Classification Panel on mobile */
+  .classification-panel {
+    width: 100% !important;
+    right: 0 !important;
+    bottom: 65px !important; /* Above bottom nav */
+    top: auto !important;
+    height: 50vh !important;
+    border-radius: 16px 16px 0 0 !important;
+    border-right: none !important;
+    border-left: none !important;
+    border-bottom: none !important;
+  }
+}
