@@ -31,6 +31,26 @@ class Facility(Base):
     last_updated = Column(DateTime(timezone=True), default=lambda: datetime.datetime.now(datetime.timezone.utc),
                           onupdate=lambda: datetime.datetime.now(datetime.timezone.utc))
 
+    @property
+    def latitude(self) -> Optional[float]:
+        if self.geom is not None:
+            try:
+                from geoalchemy2.shape import to_shape
+                return to_shape(self.geom).y
+            except Exception:
+                pass
+        return None
+
+    @property
+    def longitude(self) -> Optional[float]:
+        if self.geom is not None:
+            try:
+                from geoalchemy2.shape import to_shape
+                return to_shape(self.geom).x
+            except Exception:
+                pass
+        return None
+
 class Hotspot(Base):
     __tablename__ = "hotspots"
 
