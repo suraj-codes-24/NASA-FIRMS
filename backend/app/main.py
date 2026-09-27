@@ -93,16 +93,30 @@ async def health_check():
     }
 
 
-@app.get("/", tags=["System"])
-async def root():
-    """Root endpoint with API information."""
-    return {
-        "name": "IGNIS API",
-        "description": "Intelligent Geospatial Network for Industrial fire Surveillance",
-        "version": "1.0.0",
-        "docs": "/docs",
-        "health": "/health",
-    }
+@app.get("/test-debug", tags=["System"])
+async def test_debug():
+    import traceback
+    try:
+        from app.database import async_session_factory
+        from app.models.spatial import Hotspot, Facility
+        from app.schemas.spatial import HotspotResponse
+        from sqlalchemy import select
+        from sqlalchemy.orm import joinedload
+        
+        async with async_session_factory() as db:
+            query = (
+                select(Hotspot)
+                .options(joinedload(Hotspot.nearest_facility))
+                .filter(Hotspot.nearest_facility_id == 10)
+                .order_by(Hotspot.acq_date.desc())
+                .limit(200)
+            )
+            result = await db.execute(query)
+            hotspots = result.scalars().unique().all()
+            validated = [HotspotResponse.model_validate(h) for h in hotspots]
+            return {"count": len(validated), "sample": validated[0].model_dump(mode="json") if validated else None}
+    except Exception as e:
+        return {"error": str(e), "traceback": traceback.format_exc()}
 
 
 # ----- Router Registration -----
