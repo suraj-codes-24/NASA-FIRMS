@@ -3,6 +3,7 @@ from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, Foreig
 from sqlalchemy.orm import relationship
 from geoalchemy2 import Geometry
 from app.database import Base
+from typing import Optional
 import enum
 
 class MLClassificationEnum(str, enum.Enum):
@@ -33,22 +34,26 @@ class Facility(Base):
 
     @property
     def latitude(self) -> Optional[float]:
-        if self.geom is not None:
-            try:
+        try:
+            from sqlalchemy.orm.attributes import instance_state
+            state = instance_state(self)
+            if "geom" in state.dict and state.dict["geom"] is not None:
                 from geoalchemy2.shape import to_shape
-                return float(to_shape(self.geom).y)
-            except BaseException:
-                pass
+                return float(to_shape(state.dict["geom"]).y)
+        except BaseException:
+            pass
         return None
 
     @property
     def longitude(self) -> Optional[float]:
-        if self.geom is not None:
-            try:
+        try:
+            from sqlalchemy.orm.attributes import instance_state
+            state = instance_state(self)
+            if "geom" in state.dict and state.dict["geom"] is not None:
                 from geoalchemy2.shape import to_shape
-                return float(to_shape(self.geom).x)
-            except BaseException:
-                pass
+                return float(to_shape(state.dict["geom"]).x)
+        except BaseException:
+            pass
         return None
 
 class Hotspot(Base):

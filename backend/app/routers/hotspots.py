@@ -165,7 +165,7 @@ async def get_hotspot_history(
         lat, lon = row[0], row[1]
         from sqlalchemy.orm import joinedload, defer
         query = select(Hotspot).options(
-            joinedload(Hotspot.nearest_facility).options(defer(Facility.geom)),
+            joinedload(Hotspot.nearest_facility),
             defer(Hotspot.geom)
         ).filter(
             and_(

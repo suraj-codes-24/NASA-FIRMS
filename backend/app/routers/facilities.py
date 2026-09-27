@@ -45,7 +45,7 @@ async def get_facility_hotspots(
         query = (
             select(Hotspot)
             .options(
-                joinedload(Hotspot.nearest_facility).options(defer(Facility.geom)),
+                joinedload(Hotspot.nearest_facility),
                 defer(Hotspot.geom)
             )
             .filter(Hotspot.nearest_facility_id == facility_id)
