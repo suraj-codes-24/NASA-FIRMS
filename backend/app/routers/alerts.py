@@ -38,8 +38,7 @@ async def acknowledge_alert(alert_id: int, db: AsyncSession = Depends(get_db)):
     alert.status = "ACKNOWLEDGED"
     alert.is_read = True
     await db.commit()
-    await db.refresh(alert)
-    return alert
+    return await _get_alert_with_relations(alert_id, db)
 
 @router.put("/{alert_id}/resolve", response_model=AlertResponse)
 async def resolve_alert(
@@ -52,8 +51,7 @@ async def resolve_alert(
     alert.is_read = True
     alert.resolution_note = request.resolution_note
     await db.commit()
-    await db.refresh(alert)
-    return alert
+    return await _get_alert_with_relations(alert_id, db)
 
 @router.put("/{alert_id}/notes", response_model=AlertResponse)
 async def update_alert_notes(
@@ -64,6 +62,5 @@ async def update_alert_notes(
     alert = await _get_alert_with_relations(alert_id, db)
     alert.resolution_note = request.resolution_note
     await db.commit()
-    await db.refresh(alert)
-    return alert
+    return await _get_alert_with_relations(alert_id, db)
 

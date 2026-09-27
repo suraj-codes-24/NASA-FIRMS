@@ -71,7 +71,8 @@ async def get_facility_hotspots(
             .limit(200)
         )
         result = await db.execute(query)
-        return result.scalars().unique().all()
+        hotspots = result.scalars().unique().all()
+        return [HotspotResponse.model_validate(h) for h in hotspots]
     except HTTPException:
         raise
     except Exception as e:
