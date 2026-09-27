@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 from typing import List, Optional
 import logging
+import traceback
 
 from app.database import get_db
 from app.models.spatial import Facility, Hotspot
@@ -39,15 +41,21 @@ async def get_facility_hotspots(
     """
     Get all hotspots near a given facility.
     """
-    query = (
-        select(Hotspot)
-        .options(joinedload(Hotspot.nearest_facility))
-        .filter(Hotspot.nearest_facility_id == facility_id)
-        .order_by(Hotspot.acq_date.desc())
-        .limit(200)
-    )
-    result = await db.execute(query)
-    return result.scalars().unique().all()
+    try:
+        query = (
+            select(Hotspot)
+            .options(joinedload(Hotspot.nearest_facility))
+            .filter(Hotspot.nearest_facility_id == facility_id)
+            .order_by(Hotspot.acq_date.desc())
+            .limit(200)
+        )
+        result = await db.execute(query)
+        return result.scalars().unique().all()
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e), "traceback": traceback.format_exc()}
+        )
 
 @router.get("/{facility_id}", response_model=FacilityResponse)
 async def get_facility(

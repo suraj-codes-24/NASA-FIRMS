@@ -156,22 +156,32 @@ async def get_hotspot_history(
     """
     Get historical hotspots at approximately the same location (within ~1km grid).
     """
-    res = await db.execute(select(Hotspot.latitude, Hotspot.longitude).filter(Hotspot.id == hotspot_id))
-    row = res.first()
-    if not row:
-        raise HTTPException(status_code=404, detail="Hotspot not found")
-    
-    lat, lon = row[0], row[1]
-    from sqlalchemy.orm import joinedload
-    query = select(Hotspot).options(joinedload(Hotspot.nearest_facility)).filter(
-        and_(
-            Hotspot.latitude.between(lat - 0.01, lat + 0.01),
-            Hotspot.longitude.between(lon - 0.01, lon + 0.01),
+    try:
+        res = await db.execute(select(Hotspot.latitude, Hotspot.longitude).filter(Hotspot.id == hotspot_id))
+        row = res.first()
+        if not row:
+            raise HTTPException(status_code=404, detail="Hotspot not found")
+        
+        lat, lon = row[0], row[1]
+        from sqlalchemy.orm import joinedload
+        query = select(Hotspot).options(joinedload(Hotspot.nearest_facility)).filter(
+            and_(
+                Hotspot.latitude.between(lat - 0.01, lat + 0.01),
+                Hotspot.longitude.between(lon - 0.01, lon + 0.01),
+            )
+        ).order_by(Hotspot.acq_date.desc()).limit(200)
+        
+        result = await db.execute(query)
+        return result.scalars().unique().all()
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        from fastapi.responses import JSONResponse
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e), "traceback": traceback.format_exc()}
         )
-    ).order_by(Hotspot.acq_date.desc()).limit(200)
-    
-    result = await db.execute(query)
-    return result.scalars().unique().all()
 
 @router.get("/{hotspot_id}/nearest-facilities", response_model=List[FacilityResponse])
 async def get_nearest_facilities(
