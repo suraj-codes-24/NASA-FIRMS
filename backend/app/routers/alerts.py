@@ -10,11 +10,13 @@ from app.schemas.spatial import AlertResponse, AlertUpdate
 
 router = APIRouter()
 
+from sqlalchemy.orm import selectinload
+
 @router.get("", response_model=List[AlertResponse])
 async def list_alerts(db: AsyncSession = Depends(get_db)):
     query = await db.execute(
         select(Alert)
-        .options(joinedload(Alert.hotspot).joinedload(Hotspot.nearest_facility))
+        .options(selectinload(Alert.hotspot).selectinload(Hotspot.nearest_facility))
         .order_by(Alert.created_at.desc())
     )
     return query.scalars().all()
@@ -22,10 +24,10 @@ async def list_alerts(db: AsyncSession = Depends(get_db)):
 async def _get_alert_with_relations(alert_id: int, db: AsyncSession) -> Alert:
     query = await db.execute(
         select(Alert)
-        .options(joinedload(Alert.hotspot).joinedload(Hotspot.nearest_facility))
+        .options(selectinload(Alert.hotspot).selectinload(Hotspot.nearest_facility))
         .filter(Alert.id == alert_id)
     )
-    alert = query.scalars().unique().one_or_none()
+    alert = query.scalars().one_or_none()
     if not alert:
         raise HTTPException(status_code=404, detail="Alert not found")
     return alert
