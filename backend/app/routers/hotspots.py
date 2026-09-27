@@ -162,7 +162,7 @@ async def get_hotspot(
         raise HTTPException(status_code=404, detail="Hotspot not found")
     return hotspot
 
-@router.get("/{hotspot_id}/history")
+@router.get("/{hotspot_id}/history", response_model=List[HotspotResponse])
 async def get_hotspot_history(
     hotspot_id: int,
     days: int = Query(30, ge=1, le=365),
@@ -176,7 +176,7 @@ async def get_hotspot_history(
     if not row:
         raise HTTPException(status_code=404, detail="Hotspot not found")
     
-    lat, lon = row.latitude, row.longitude
+    lat, lon = row[0], row[1]
     from sqlalchemy.orm import joinedload
     query = select(Hotspot).options(joinedload(Hotspot.nearest_facility)).filter(
         and_(
@@ -186,8 +186,7 @@ async def get_hotspot_history(
     ).order_by(Hotspot.acq_date.desc()).limit(200)
     
     result = await db.execute(query)
-    hotspots = result.scalars().unique().all()
-    return [HotspotResponse.model_validate(h).model_dump(mode="json") for h in hotspots]
+    return result.scalars().unique().all()
 
 @router.get("/{hotspot_id}/nearest-facilities", response_model=List[FacilityResponse])
 async def get_nearest_facilities(

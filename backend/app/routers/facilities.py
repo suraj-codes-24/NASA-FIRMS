@@ -43,7 +43,7 @@ async def get_facility(
         
     return facility
 
-@router.get("/{facility_id}/hotspots")
+@router.get("/{facility_id}/hotspots", response_model=List[HotspotResponse])
 async def get_facility_hotspots(
     facility_id: int,
     radius_km: float = Query(2.0, ge=0.1, le=50.0),
@@ -61,5 +61,4 @@ async def get_facility_hotspots(
         .limit(200)
     )
     result = await db.execute(query)
-    hotspots = result.scalars().unique().all()
-    return [HotspotResponse.model_validate(h).model_dump(mode="json") for h in hotspots]
+    return result.scalars().unique().all()
