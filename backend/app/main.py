@@ -90,6 +90,7 @@ async def health_check():
         "service": "ignis-backend",
         "version": "1.0.0",
         "environment": settings.app_env,
+        "commit": "c7a62ff",
     }
 
 
