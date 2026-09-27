@@ -62,16 +62,16 @@ async def get_facility_hotspots(
         if not facility:
             raise HTTPException(status_code=404, detail="Facility not found")
         
-        from sqlalchemy.orm import selectinload
+        from sqlalchemy.orm import joinedload
         query = (
             select(Hotspot)
-            .options(selectinload(Hotspot.nearest_facility))
+            .options(joinedload(Hotspot.nearest_facility))
             .filter(Hotspot.nearest_facility_id == facility_id)
             .order_by(Hotspot.acq_date.desc())
             .limit(200)
         )
         result = await db.execute(query)
-        return result.scalars().all()
+        return result.scalars().unique().all()
     except HTTPException:
         raise
     except Exception as e:
