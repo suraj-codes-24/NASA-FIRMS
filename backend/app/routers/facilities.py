@@ -42,7 +42,9 @@ async def get_facility(
         
     return facility
 
-@router.get("/{facility_id}/hotspots")
+from app.schemas.spatial import HotspotResponse
+
+@router.get("/{facility_id}/hotspots", response_model=List[HotspotResponse])
 async def get_facility_hotspots(
     facility_id: int,
     radius_km: float = Query(2.0, ge=0.1, le=50.0),

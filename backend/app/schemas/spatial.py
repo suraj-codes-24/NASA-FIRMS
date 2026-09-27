@@ -57,15 +57,15 @@ class HotspotResponse(BaseModel):
     # Enriched fields
     land_cover_class: Optional[str] = None
     dist_to_industry_m: Optional[float] = None
-    persistence_hours: float = 0.0
-    recurrence_count: int = 0
-    spatial_cluster_size: int = 1
+    persistence_hours: Optional[float] = 0.0
+    recurrence_count: Optional[int] = 0
+    spatial_cluster_size: Optional[int] = 1
     spread_rate: Optional[float] = None
     
     # ML fields
-    ml_label: MLClassificationEnum
+    ml_label: Optional[str] = "Unclassified"
     classification_confidence: Optional[float] = None
-    is_user_verified: bool
+    is_user_verified: Optional[bool] = False
     
     # Relationships
     nearest_facility_id: Optional[int] = None
