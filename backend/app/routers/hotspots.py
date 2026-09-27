@@ -193,7 +193,7 @@ async def get_hotspot_history(
     ).order_by(Hotspot.acq_date.desc()).limit(200)
     
     result = await db.execute(query)
-    return result.scalars().all()
+    return result.scalars().unique().all()
 
 @router.get("/{hotspot_id}/nearest-facilities", response_model=List[FacilityResponse])
 async def get_nearest_facilities(

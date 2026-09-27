@@ -19,12 +19,20 @@ async def list_alerts(db: AsyncSession = Depends(get_db)):
     )
     return query.scalars().all()
 
-@router.put("/{alert_id}/acknowledge", response_model=AlertResponse)
-async def acknowledge_alert(alert_id: int, db: AsyncSession = Depends(get_db)):
-    alert = await db.get(Alert, alert_id)
+async def _get_alert_with_relations(alert_id: int, db: AsyncSession) -> Alert:
+    query = await db.execute(
+        select(Alert)
+        .options(joinedload(Alert.hotspot).joinedload(Hotspot.nearest_facility))
+        .filter(Alert.id == alert_id)
+    )
+    alert = query.scalars().unique().one_or_none()
     if not alert:
         raise HTTPException(status_code=404, detail="Alert not found")
-        
+    return alert
+
+@router.put("/{alert_id}/acknowledge", response_model=AlertResponse)
+async def acknowledge_alert(alert_id: int, db: AsyncSession = Depends(get_db)):
+    alert = await _get_alert_with_relations(alert_id, db)
     alert.status = "ACKNOWLEDGED"
     alert.is_read = True
     await db.commit()
@@ -37,10 +45,7 @@ async def resolve_alert(
     request: AlertUpdate,
     db: AsyncSession = Depends(get_db)
 ):
-    alert = await db.get(Alert, alert_id)
-    if not alert:
-        raise HTTPException(status_code=404, detail="Alert not found")
-        
+    alert = await _get_alert_with_relations(alert_id, db)
     alert.status = "RESOLVED"
     alert.is_read = True
     alert.resolution_note = request.resolution_note
@@ -54,10 +59,7 @@ async def update_alert_notes(
     request: AlertUpdate,
     db: AsyncSession = Depends(get_db)
 ):
-    alert = await db.get(Alert, alert_id)
-    if not alert:
-        raise HTTPException(status_code=404, detail="Alert not found")
-        
+    alert = await _get_alert_with_relations(alert_id, db)
     alert.resolution_note = request.resolution_note
     await db.commit()
     await db.refresh(alert)

@@ -12,13 +12,15 @@ router = APIRouter()
 class SettingsUpdate(BaseModel):
     settings: Dict[str, str]
 
-@router.get("/", response_model=Dict[str, str])
+@router.get("", response_model=Dict[str, str])
+@router.get("/", response_model=Dict[str, str], include_in_schema=False)
 async def get_settings(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(SystemSetting))
     settings = result.scalars().all()
     return {setting.key: setting.value for setting in settings}
 
-@router.post("/", response_model=Dict[str, str])
+@router.post("", response_model=Dict[str, str])
+@router.post("/", response_model=Dict[str, str], include_in_schema=False)
 async def update_settings(update: SettingsUpdate, db: AsyncSession = Depends(get_db)):
     # Upsert logic
     for key, value in update.settings.items():
