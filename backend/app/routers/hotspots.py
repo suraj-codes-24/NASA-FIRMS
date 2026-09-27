@@ -176,7 +176,8 @@ async def get_hotspot_history(
         if not hotspot:
             raise HTTPException(status_code=404, detail="Hotspot not found")
         
-        query = select(Hotspot).filter(
+        from sqlalchemy.orm import selectinload
+        query = select(Hotspot).options(selectinload(Hotspot.nearest_facility)).filter(
             and_(
                 Hotspot.latitude.between(hotspot.latitude - 0.01, hotspot.latitude + 0.01),
                 Hotspot.longitude.between(hotspot.longitude - 0.01, hotspot.longitude + 0.01),
