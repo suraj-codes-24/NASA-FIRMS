@@ -147,21 +147,6 @@ async def get_heatmap_data(
     rows = result.all()
     return [HeatmapPoint(latitude=r[0], longitude=r[1], weight=r[2] or 1.0) for r in rows]
 
-@router.get("/{hotspot_id}", response_model=HotspotResponse)
-async def get_hotspot(
-    hotspot_id: int,
-    db: AsyncSession = Depends(get_db)
-):
-    """
-    Get full details of a single hotspot by ID.
-    """
-    query = select(Hotspot).options(joinedload(Hotspot.nearest_facility)).filter(Hotspot.id == hotspot_id)
-    result = await db.execute(query)
-    hotspot = result.scalar_one_or_none()
-    if not hotspot:
-        raise HTTPException(status_code=404, detail="Hotspot not found")
-    return hotspot
-
 @router.get("/{hotspot_id}/history", response_model=List[HotspotResponse])
 async def get_hotspot_history(
     hotspot_id: int,
@@ -207,6 +192,21 @@ async def get_nearest_facilities(
     
     result = await db.execute(query)
     return result.scalars().all()
+
+@router.get("/{hotspot_id}", response_model=HotspotResponse)
+async def get_hotspot(
+    hotspot_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get full details of a single hotspot by ID.
+    """
+    query = select(Hotspot).options(joinedload(Hotspot.nearest_facility)).filter(Hotspot.id == hotspot_id)
+    result = await db.execute(query)
+    hotspot = result.scalar_one_or_none()
+    if not hotspot:
+        raise HTTPException(status_code=404, detail="Hotspot not found")
+    return hotspot
 
 @router.post("/{hotspot_id}/verify", response_model=VerificationLogResponse)
 async def verify_hotspot_classification(

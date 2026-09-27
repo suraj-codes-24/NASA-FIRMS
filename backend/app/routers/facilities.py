@@ -29,20 +29,6 @@ async def get_facilities(
     result = await db.execute(query)
     return result.scalars().all()
 
-@router.get("/{facility_id}", response_model=FacilityResponse)
-async def get_facility(
-    facility_id: int,
-    db: AsyncSession = Depends(get_db)
-):
-    """
-    Retrieve a specific industrial facility by ID.
-    """
-    facility = await db.get(Facility, facility_id)
-    if not facility:
-        raise HTTPException(status_code=404, detail="Facility not found")
-        
-    return facility
-
 @router.get("/{facility_id}/hotspots", response_model=List[HotspotResponse])
 async def get_facility_hotspots(
     facility_id: int,
@@ -62,3 +48,17 @@ async def get_facility_hotspots(
     )
     result = await db.execute(query)
     return result.scalars().unique().all()
+
+@router.get("/{facility_id}", response_model=FacilityResponse)
+async def get_facility(
+    facility_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Retrieve a specific industrial facility by ID.
+    """
+    facility = await db.get(Facility, facility_id)
+    if not facility:
+        raise HTTPException(status_code=404, detail="Facility not found")
+        
+    return facility
