@@ -4,9 +4,9 @@ from typing import Optional, List
 from app.models.spatial import MLClassificationEnum
 
 class FacilityBase(BaseModel):
-    osm_id: str
+    osm_id: Optional[str] = None
     name: Optional[str] = None
-    facility_type: str
+    facility_type: Optional[str] = "industrial"
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     state: Optional[str] = None
@@ -14,7 +14,7 @@ class FacilityBase(BaseModel):
 
 class FacilityResponse(FacilityBase):
     id: int
-    created_at: datetime.datetime
+    created_at: Optional[datetime.datetime] = None
     
     model_config = ConfigDict(from_attributes=True)
 
@@ -96,14 +96,14 @@ class VerificationLogResponse(BaseModel):
 
 class AlertBase(BaseModel):
     hotspot_id: int
-    alert_type: str
-    severity: str
-    status: str
-    is_read: bool
+    alert_type: Optional[str] = "HIGH_FRP"
+    severity: Optional[str] = "INFO"
+    status: Optional[str] = "NEW"
+    is_read: Optional[bool] = False
 
 class AlertResponse(AlertBase):
     id: int
-    created_at: datetime.datetime
+    created_at: Optional[datetime.datetime] = None
     resolution_note: Optional[str] = None
     hotspot: Optional[HotspotResponse] = None
     
