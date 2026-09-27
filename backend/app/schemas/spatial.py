@@ -52,7 +52,7 @@ class HotspotResponse(BaseModel):
     daynight: Optional[str] = None
     scan: Optional[float] = None
     track: Optional[float] = None
-    acq_date: datetime.datetime
+    acq_date: Optional[datetime.datetime] = None
     
     # Enriched fields
     land_cover_class: Optional[str] = None
