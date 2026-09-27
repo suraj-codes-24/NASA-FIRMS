@@ -176,7 +176,7 @@ async def get_hotspot_history(
         if not hotspot:
             raise HTTPException(status_code=404, detail="Hotspot not found")
         
-        query = select(Hotspot).options(joinedload(Hotspot.nearest_facility)).filter(
+        query = select(Hotspot).filter(
             and_(
                 Hotspot.latitude.between(hotspot.latitude - 0.01, hotspot.latitude + 0.01),
                 Hotspot.longitude.between(hotspot.longitude - 0.01, hotspot.longitude + 0.01),
@@ -184,7 +184,7 @@ async def get_hotspot_history(
         ).order_by(Hotspot.acq_date.desc()).limit(200)
         
         result = await db.execute(query)
-        return result.scalars().unique().all()
+        return result.scalars().all()
     except HTTPException:
         raise
     except Exception as e:
