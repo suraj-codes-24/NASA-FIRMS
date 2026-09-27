@@ -138,8 +138,10 @@ const AlertDetailPane = ({ selectedAlert, onAction, onClose }) => {
           {/* Right Column: Large Map */}
           <div style={{ flex: 1.5, borderRadius: '12px', overflow: 'hidden', position: 'relative', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
             <MapContainer center={[lat, lng]} zoom={14} style={{ height: '100%', width: '100%', backgroundColor: '#000' }} zoomControl={true} attributionControl={false}>
-              <TileLayer url="https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}" />
-              <TileLayer url="https://mt1.google.com/vt/lyrs=h&x={x}&y={y}&z={z}&hl=en" />
+              <TileLayer 
+                url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}" 
+                attribution="Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ"
+              />
               <Marker position={[lat, lng]} icon={redIcon} />
             </MapContainer>
             {/* Map Overlay Vignette */}

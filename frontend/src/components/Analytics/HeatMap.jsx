@@ -79,10 +79,6 @@ const HeatMap = ({ filters }) => {
           url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
           attribution="Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ"
         />
-        {/* Reference Labels (Places, Borders) for Dark Map */}
-        <TileLayer
-          url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}"
-        />
         
         {/* Simulate heatmap effect with blurred circles */}
         {hotspots.map((pt, i) => {

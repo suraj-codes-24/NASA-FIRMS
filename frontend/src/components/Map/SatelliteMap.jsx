@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Circle } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Circle, useMapEvents, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { fetchHotspots } from '../../api';
@@ -7,30 +7,69 @@ import MarkerClusterGroup from './MarkerClusterGroup';
 import { useSettings } from '../../contexts/SettingsContext';
 import HeatmapLayer from './HeatmapLayer';
 
+const ZoomTracker = ({ onZoomChange }) => {
+  const map = useMapEvents({
+    zoomend: () => onZoomChange(map.getZoom()),
+  });
+  return null;
+};
+
+const HotspotFocus = ({ hotspot }) => {
+  const map = useMap();
+  useEffect(() => {
+    // Auto-zoom disabled per user request
+    // if (hotspot) {
+    //   map.flyTo([hotspot.latitude, hotspot.longitude], 15, { duration: 1.2 });
+    // }
+  }, [hotspot, map]);
+  return null;
+};
+
 // Create a glowing, pulsing orb icon based on classification
-const createCustomIcon = (color, isIndustrial) => {
+const createCustomIcon = (color, isIndustrial, zoom = 13) => {
   const pulseClass = isIndustrial ? 'pulse-ring' : '';
-  const shadowSpread = isIndustrial ? '12px' : '6px';
   
+  // Calculate size based on zoom.
+  // Shrink significantly when zoomed out to reduce overlap.
+  let outerSize = 16;
+  let innerSize = 10;
+  let shadowSpread = isIndustrial ? '12px' : '6px';
+
+  if (zoom <= 5) {
+    outerSize = 4; innerSize = 2; shadowSpread = '0px';
+  } else if (zoom <= 8) {
+    outerSize = 6; innerSize = 4; shadowSpread = '2px';
+  } else if (zoom <= 11) {
+    outerSize = 10; innerSize = 6; shadowSpread = '4px';
+  } else if (zoom >= 15) {
+    outerSize = 20; innerSize = 14; shadowSpread = isIndustrial ? '16px' : '8px';
+  }
+
+  const hitAreaSize = 24; // Ensure the clickable hitbox is always large enough
+
   return L.divIcon({
     className: 'custom-icon',
     html: `
-      <div style="position: relative; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center;">
-        <div class="${pulseClass}" style="position: absolute; width: 100%; height: 100%; border: 2px solid ${color}; border-radius: 50%;"></div>
-        <div style="background-color: ${color}; width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 ${shadowSpread} ${color};"></div>
+      <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+        <div style="position: relative; width: ${outerSize}px; height: ${outerSize}px; display: flex; align-items: center; justify-content: center;">
+          <div class="${pulseClass}" style="position: absolute; width: 100%; height: 100%; border: 2px solid ${color}; border-radius: 50%;"></div>
+          <div style="background-color: ${color}; width: ${innerSize}px; height: ${innerSize}px; border-radius: 50%; box-shadow: 0 0 ${shadowSpread} ${color};"></div>
+        </div>
       </div>
     `,
-    iconSize: [16, 16],
-    iconAnchor: [8, 8]
+    iconSize: [hitAreaSize, hitAreaSize],
+    iconAnchor: [hitAreaSize / 2, hitAreaSize / 2]
   });
 };
 
 const SatelliteMap = ({ activeFilters, onFilterChange, selectedHotspot, onSelectHotspot }) => {
-  const [position, setPosition] = useState([22.3, 73.1]); // Example coords
+  const [position, setPosition] = useState([22.0, 79.0]); // Center of India
   const [hotspots, setHotspots] = useState([]);
+  const [showLabels, setShowLabels] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(5);
   const { settings } = useSettings();
 
-  const useClustering = settings?.settings_map_cluster !== 'false';
+  const useClustering = false;
   const showBuffers = settings?.settings_map_buffers !== 'false';
   const showHeatmap = settings?.settings_map_heatmap === 'true';
 
@@ -39,12 +78,7 @@ const SatelliteMap = ({ activeFilters, onFilterChange, selectedHotspot, onSelect
       try {
         const data = await fetchHotspots();
         setHotspots(data);
-        if (data.length > 0) {
-          // Find first industrial fire to center on, else first hotspot
-          const industrial = data.find(h => h.ml_label === 'Industrial Fire');
-          const centerFire = industrial || data[0];
-          setPosition([centerFire.latitude, centerFire.longitude]);
-        }
+        // Map will now always start at the default India view instead of auto-centering.
       } catch (e) {
         console.error("Failed to load hotspots", e);
       }
@@ -90,17 +124,20 @@ const SatelliteMap = ({ activeFilters, onFilterChange, selectedHotspot, onSelect
         opacity: 0.15,
         zIndex: 500
       }} />
-      <MapContainer center={position} zoom={13} style={{ height: '100%', width: '100%' }} zoomControl={false} scrollWheelZoom={true}>
-        
-        {/* Google Satellite View */}
+      <MapContainer center={position} zoom={5} style={{ height: '100%', width: '100%' }} zoomControl={false} scrollWheelZoom={true}>
+        <ZoomTracker onZoomChange={setZoomLevel} />
+        <HotspotFocus hotspot={selectedHotspot} />
+        {/* ArcGIS Dark Gray Canvas Base View */}
         <TileLayer
-          url="https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}"
-          attribution="&copy; Google Maps"
+          url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
+          attribution="Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ"
         />
-        {/* Google Labels (English) */}
-        <TileLayer
-          url="https://mt1.google.com/vt/lyrs=h&x={x}&y={y}&z={z}&hl=en"
-        />
+        {/* ArcGIS Dark Gray Canvas Labels */}
+        {showLabels && (
+          <TileLayer
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}"
+          />
+        )}
         
         {/* Facility Marker (Blue) */}
         <Marker position={[22.3, 73.1]} icon={L.divIcon({
@@ -133,7 +170,7 @@ const SatelliteMap = ({ activeFilters, onFilterChange, selectedHotspot, onSelect
               <Marker 
                 key={i} 
                 position={[h.latitude, h.longitude]} 
-                icon={createCustomIcon(getColorForLabel(h.ml_label), h.ml_label === 'Industrial Fire')}
+                icon={createCustomIcon(getColorForLabel(h.ml_label), h.ml_label === 'Industrial Fire', zoomLevel)}
                 zIndexOffset={selectedHotspot && selectedHotspot.id === h.id ? 1000 : 0}
                 eventHandlers={{
                   click: () => onSelectHotspot(h),
@@ -147,7 +184,7 @@ const SatelliteMap = ({ activeFilters, onFilterChange, selectedHotspot, onSelect
               <Marker 
                 key={i} 
                 position={[h.latitude, h.longitude]} 
-                icon={createCustomIcon(getColorForLabel(h.ml_label), h.ml_label === 'Industrial Fire')}
+                icon={createCustomIcon(getColorForLabel(h.ml_label), h.ml_label === 'Industrial Fire', zoomLevel)}
                 zIndexOffset={selectedHotspot && selectedHotspot.id === h.id ? 1000 : 0}
                 eventHandlers={{
                   click: () => onSelectHotspot(h),
@@ -204,6 +241,29 @@ const SatelliteMap = ({ activeFilters, onFilterChange, selectedHotspot, onSelect
           
           <div style={{display: 'flex', alignItems: 'center', gap: '12px', fontSize: '12px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '10px', marginTop: '4px', opacity: activeFilters.length === 0 ? 1 : 0.3}}>
             <div style={{width:'10px', height:'10px', borderRadius:'2px', backgroundColor:'#00a8ff', border: '1px solid rgba(255,255,255,0.3)'}}></div> Known Facility
+          </div>
+          
+          {/* Map Labels Toggle */}
+          <div 
+            onClick={() => setShowLabels(!showLabels)}
+            style={{
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              gap: '8px', 
+              marginTop: '12px', 
+              padding: '8px 10px',
+              fontSize: '12px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              backgroundColor: showLabels ? 'rgba(0, 168, 255, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+              border: showLabels ? '1px solid rgba(0, 168, 255, 0.5)' : '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '6px',
+              transition: 'all 0.2s ease',
+              color: showLabels ? '#00a8ff' : 'var(--text-secondary)'
+            }}
+          >
+            {showLabels ? 'Hide Map Labels' : 'Show Map Labels'}
           </div>
         </div>
       </MapContainer>
