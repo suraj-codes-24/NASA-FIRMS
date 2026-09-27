@@ -36,8 +36,8 @@ class Facility(Base):
         if self.geom is not None:
             try:
                 from geoalchemy2.shape import to_shape
-                return to_shape(self.geom).y
-            except Exception:
+                return float(to_shape(self.geom).y)
+            except BaseException:
                 pass
         return None
 
@@ -46,8 +46,8 @@ class Facility(Base):
         if self.geom is not None:
             try:
                 from geoalchemy2.shape import to_shape
-                return to_shape(self.geom).x
-            except Exception:
+                return float(to_shape(self.geom).x)
+            except BaseException:
                 pass
         return None
 
