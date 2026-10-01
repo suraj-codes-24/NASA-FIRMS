@@ -1,0 +1,238 @@
+[
+  {
+    "endpoint": "/health",
+    "method": "GET",
+    "status": 200,
+    "note": "Health check",
+    "data_sample": {
+      "status": "ok",
+      "environment": "production"
+    }
+  },
+  {
+    "endpoint": "/",
+    "method": "GET",
+    "status": 404,
+    "note": "Root info",
+    "data_sample": {
+      "detail": "Not Found"
+    }
+  },
+  {
+    "endpoint": "/api/v1/auth/login",
+    "method": "POST",
+    "status": 401,
+    "note": "Admin Login",
+    "data_sample": "{\"detail\":\"Incorrect email or password\"}"
+  },
+  {
+    "endpoint": "/api/v1/auth/me",
+    "method": "GET",
+    "status": 401,
+    "note": "Skipped due to login failure",
+    "data_sample": null
+  },
+  {
+    "endpoint": "/api/v1/hotspots",
+    "method": "GET",
+    "status": 200,
+    "note": "Returned 5 hotspots",
+    "data_sample": [
+      {
+        "id": 295,
+        "latitude": 23.7,
+        "longitude": 86.4,
+        "brightness": 340.0,
+        "bright_t31": 300.0,
+        "frp": 150.0,
+        "confidence": 90.0,
+        "satellite": "N",
+        "instrument": "VIIRS",
+        "daynight": "N",
+        "scan": null,
+        "track": null,
+        "acq_date": "2026-09-26T20:08:47.100677Z",
+        "land_cover_class": null,
+        "dist_to_industry_m": 2000.0,
+        "persistence_hours": 0.0,
+        "recurrence_count": 0,
+        "spatial_cluster_size": 1,
+        "spread_rate": null,
+        "ml_label": "Gas Flare",
+        "classification_confidence": 92.0,
+        "is_user_verified": false,
+        "nearest_facility_id": 10,
+        "nearest_facility": {
+          "osm_id": "demo_12345",
+          "name": "Demo Steel Plant",
+          "facility_type": "metal_smelting",
+          "latitude": null,
+          "longitude": null,
+          "state": "Jharkhand",
+          "district": "Singhbhum",
+          "id": 10,
+          "created_at": "2026-09-26T20:08:45.333917Z"
+        }
+      }
+    ]
+  },
+  {
+    "endpoint": "/api/v1/hotspots/latest",
+    "method": "GET",
+    "status": 200,
+    "note": "Returned 50 latest hotspots",
+    "data_sample": null
+  },
+  {
+    "endpoint": "/api/v1/hotspots/heatmap",
+    "method": "GET",
+    "status": 200,
+    "note": "Heatmap points: 295",
+    "data_sample": null
+  },
+  {
+    "endpoint": "/api/v1/hotspots/295",
+    "method": "GET",
+    "status": 200,
+    "note": "Hotspot ID 295",
+    "data_sample": {
+      "id": 295,
+      "latitude": 23.7,
+      "longitude": 86.4,
+      "brightness": 340.0,
+      "bright_t31": 300.0,
+      "frp": 150.0,
+      "confidence": 90.0,
+      "satellite": "N",
+      "instrument": "VIIRS",
+      "daynight": "N",
+      "scan": null,
+      "track": null,
+      "acq_date": "2026-09-26T20:08:47.100677Z",
+      "land_cover_class": null,
+      "dist_to_industry_m": 2000.0,
+      "persistence_hours": 0.0,
+      "recurrence_count": 0,
+      "spatial_cluster_size": 1,
+      "spread_rate": null,
+      "ml_label": "Gas Flare",
+      "classification_confidence": 92.0,
+      "is_user_verified": false,
+      "nearest_facility_id": 10,
+      "nearest_facility": {
+        "osm_id": "demo_12345",
+        "name": "Demo Steel Plant",
+        "facility_type": "metal_smelting",
+        "latitude": null,
+        "longitude": null,
+        "state": "Jharkhand",
+        "district": "Singhbhum",
+        "id": 10,
+        "created_at": "2026-09-26T20:08:45.333917Z"
+      }
+    }
+  },
+  {
+    "endpoint": "/api/v1/hotspots/295/history",
+    "method": "GET",
+    "status": 500,
+    "note": "History items: 0",
+    "data_sample": null
+  },
+  {
+    "endpoint": "/api/v1/hotspots/295/nearest-facilities",
+    "method": "GET",
+    "status": 200,
+    "note": "Facilities near hotspot: 1",
+    "data_sample": null
+  },
+  {
+    "endpoint": "/api/v1/facilities",
+    "method": "GET",
+    "status": 200,
+    "note": "Returned 1 facilities",
+    "data_sample": null
+  },
+  {
+    "endpoint": "/api/v1/facilities/10",
+    "method": "GET",
+    "status": 200,
+    "note": "Facility ID 10",
+    "data_sample": null
+  },
+  {
+    "endpoint": "/api/v1/facilities/10/hotspots",
+    "method": "GET",
+    "status": 500,
+    "note": "Facility hotspots count: 0",
+    "data_sample": null
+  },
+  {
+    "endpoint": "/api/v1/analytics/summary",
+    "method": "GET",
+    "status": 200,
+    "note": "Analytics Summary",
+    "data_sample": {
+      "total_hotspots": 295,
+      "active_industrial_fires": 1,
+      "high_severity_alerts": 2,
+      "unverified_classifications": 295
+    }
+  },
+  {
+    "endpoint": "/api/v1/analytics/classification",
+    "method": "GET",
+    "status": 200,
+    "note": "Class counts: [{'label': 'Industrial Fire', 'count': 1}, {'label': 'Gas Flare', 'count': 1}, {'label': 'Forest Fire', 'count': 293}]",
+    "data_sample": null
+  },
+  {
+    "endpoint": "/api/v1/analytics/timeline",
+    "method": "GET",
+    "status": 200,
+    "note": "Timeline points: 3",
+    "data_sample": null
+  },
+  {
+    "endpoint": "/api/v1/analytics/top-states",
+    "method": "GET",
+    "status": 200,
+    "note": "States: [{'state': 'Jharkhand', 'count': 2}]",
+    "data_sample": null
+  },
+  {
+    "endpoint": "/api/v1/analytics/persistence",
+    "method": "GET",
+    "status": 200,
+    "note": "Persistent thermal points: 0",
+    "data_sample": null
+  },
+  {
+    "endpoint": "/api/v1/alerts",
+    "method": "GET",
+    "status": 200,
+    "note": "Alerts count: 2",
+    "data_sample": null
+  },
+  {
+    "endpoint": "/api/v1/alerts/2/acknowledge",
+    "method": "PUT",
+    "status": 500,
+    "note": "Alert ID 2 acknowledged",
+    "data_sample": null
+  },
+  {
+    "endpoint": "/api/v1/settings",
+    "method": "GET",
+    "status": 307,
+    "note": "System Settings",
+    "data_sample": null
+  },
+  {
+    "endpoint": "/api/v1/reports/summary",
+    "method": "GET",
+    "status": 200,
+    "note": "Report Summary Stats",
+    "data_sample": null
+  }
+]

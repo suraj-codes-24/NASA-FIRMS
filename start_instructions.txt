@@ -1,0 +1,18 @@
+IGNIS - Start Instructions
+
+1. Start the project:
+   Open your terminal in this project directory (NASA-FIRMS) and run:
+   docker-compose up -d
+
+2. Access the Dashboard:
+   Open your browser and navigate to:
+   http://localhost:5173
+
+3. Default Login Credentials:
+   Email: admin@ignis.gov
+   Password: admin123
+
+4. Testing the Live Pipeline:
+   - Once logged in, navigate to the Settings page via the sidebar.
+   - Click the "FORCE IMMEDIATE SYNC" button.
+   - This will fetch the latest global telemetry from NASA and run it through the ML engine!
